@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SpotifyPlay</title>
+  <link rel="stylesheet" href="styles-main.css" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #191414;
+      color: white;
+      margin: 0;
+      padding: 0;
+    }
+
+    .header {
+      text-align: center;
+      padding: 50px 20px 80px;
+    }
+
+    .header .logo {
+      font-size: 3rem;
+      color: #1DB954;
+      margin-bottom: 20px;
+    }
+
+    .header h1 {
+      font-size: 2.5rem;
+      margin: 10px 0 30px;
+    }
+
+    .header .subtitle {
+      font-size: 1.2rem;
+      color: #ccc;
+      margin-bottom: 40px;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 60px;
+      padding: 0 20px;
+    }
+
+    .features {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      flex-wrap: wrap;
+    }
+
+    .feature-card {
+      background: #282828;
+      border-radius: 10px;
+      padding: 20px;
+      width: 250px;
+      text-align: center;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    .feature-card h3 {
+      font-size: 1.2rem;
+      color: #1DB954;
+      margin-bottom: 10px;
+    }
+
+    .feature-card p {
+      font-size: 0.9rem;
+      color: #ccc;
+    }
+
+    .feature-card i {
+      font-size: 2rem;
+      color: #1DB954;
+      margin-bottom: 10px;
+    }
+
+    .button-container {
+      text-align: center;
+      margin-top: 40px;
+    }
+
+    .connect-button {
+      background: #1DB954;
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      font-size: 1.2rem;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .connect-button:hover {
+      background: #14833b;
+    }
+
+    .how-it-works {
+      text-align: center;
+      margin-top: 80px;
+    }
+
+    .how-it-works h2 {
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+    }
+
+    .steps {
+      display: flex;
+      justify-content: center;
+      gap: 60px;
+    }
+
+    .step {
+      text-align: center;
+      color: #ccc;
+    }
+
+    .step .circle {
+      width: 50px;
+      height: 50px;
+      background: #1DB954;
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      margin: 0 auto 10px;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 20px;
+      background: #191414;
+      color: #ccc;
+      font-size: 0.9rem;
+      margin-top: 80px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="logo">
+        <img src="logo.png" alt="Spotify Logo" class="logo" style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%);" />
+        <span class="logo-text" style="position: absolute; top: 60px; left: 50%; transform: translateX(-50%); font-size: 2rem;">PiedPiper</span>
+    </header>
+    <div class="container">
+      <div class="features">
+        <div class="feature-card">
+          <i class="fas fa-play-circle"></i>
+          <h3>Smart Generation</h3>
+          <p>Automatically create playlists based on your listening history and preferences.</p>
+        </div>
+        <div class="feature-card">
+          <i class="fas fa-chart-line"></i>
+          <h3>Top Tracks Analysis</h3>
+          <p>View insights about your most played tracks and favorite artists.</p>
+        </div>
+        <div class="feature-card">
+          <i class="fas fa-share-alt"></i>
+          <h3>Easy Sharing</h3>
+          <p>Share your generated playlists with friends or keep them private.</p>
+        </div>
+      </div>
+      <div class="button-container">
+        <button class="connect-button" onclick="loginWithSpotify()">Connect with Spotify</button>
+      </div>
+      <div class="how-it-works">
+        <h2>How it works</h2>
+        <div class="steps">
+          <div class="step">
+            <div class="circle">1</div>
+            <p>Connect your Spotify account</p>
+          </div>
+          <div class="step">
+            <div class="circle">2</div>
+            <p>View your music statistics</p>
+          </div>
+          <div class="step">
+            <div class="circle">3</div>
+            <p>Generate custom playlists</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <footer class="footer">
+      <p>SpotifyPlay &copy; 2025. All rights reserved.</p>
+    </footer>
+  </div>
+  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+  <script>
+    function loginWithSpotify() {
+      const clientId = '43f735a675d04dc593023010c69937f3';
+      const redirectUri = 'https://fadilbinjabi.github.io/PiedPipere/main.html';
+      const scopes = 'user-top-read playlist-read-private';
+      const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(
+        redirectUri
+      )}&scope=${encodeURIComponent(scopes)}`;
+      window.location.href = authUrl;
+    }
+  </script>
+</body>
+</html>
