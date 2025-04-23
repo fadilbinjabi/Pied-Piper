@@ -21,7 +21,31 @@
       </div>
       <!-- ... rest of the header content ... -->
     </header>
-    <h1>Welcome to PiedPier</h1>
+    <nav class="navigation-container">
+      <div class="nav-wrapper">
+        <div class="nav-brand">
+          <img src="logo.png" alt="Logo" class="nav-logo" />
+          <h1 class="brand-name">SpotifyPlay</h1>
+        </div>
+        <div class="nav-links">
+          <a href="#mood-playlist-container" class="nav-link">Mood Playlist</a>
+          <a href="#stats-section" class="nav-link">Stats</a>
+        </div>
+        <div class="nav-icons">
+          <a href="#" class="nav-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 12h18M12 6l-6 6 6 6M12 6l6 6m0-6l-6 6"/>
+            </svg>
+          </a>
+          <a href="#" class="nav-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M16 8l-8 8M8 8l8 8"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </nav>
     <div class="container">
       <aside class="sidebar">
         <h3>Your Playlists</h3>
@@ -31,7 +55,7 @@
       </aside>
       <main class="content">
         <!-- Mood-Based Playlist Section -->
-        <div id="mood-playlist-container">
+        <div id="mood-playlist-container" class ="section">
           <h2>Generate Special Playlist</h2>
           <select id="playlist-type">
             <option value="sleeping">Sleeping</option>
@@ -62,12 +86,12 @@
           </div>
           
           <ul id="mood-playlist"></ul>
-          <button onclick="generateSpecialPlaylist()">Generate Playlist</button>
+          <button id="generate-playlist-button" onclick="generateSpecialPlaylist()">Generate Playlist</button>
           <button id="save-playlist-button" onclick="savePlaylist()">Save Playlist</button>
         </div>
 
         <!-- Stats Section -->
-        <section class="stats-section">
+        <div id="stats-section" class="section">
           <div class="stats-container">
             <div class="stats-item">
               <h2>Top 3 Artists</h2>
@@ -91,24 +115,25 @@
             </div>
           </div>
         </section>
-
-        <!-- Chart Section -->
-        <div id="chart-container">
-          <label for="chart-type-selector">Select Chart Type:</label>
-          <select id="chart-type-selector">
-            <option value="bar">Bar</option>
-            <option value="line">Line</option>
-            <option value="pie">Pie</option>
-            <option value="doughnut">Doughnut</option>
-          </select>
-          <canvas id="mock-data-chart" width="300" height="150"></canvas>
-        </div>
         <!-- Bottom Bar -->
         <div class="bottom-bar">
           <div class="player-controls">
-            <button class="previous-button">&#9194;</button>
-            <button class="play-pause-button" id="play-pause-button">&#9658;</button>
-            <button class="next-button">&#9193;</button>
+            <button class="previous-button">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="19 20 9 12 19 4 19 20"></polygon>
+              </svg>
+            </button>
+            <button class="play-pause-button" id="play-pause-button">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="16"></line>
+              </svg>
+            </button>
+            <button class="next-button">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="5 20 15 12 5 4 5 20"></polygon>
+              </svg>
+            </button>
           </div>
           <div class="song-info">
             <span id="song-title"></span>
