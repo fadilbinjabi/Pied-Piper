@@ -1,5 +1,5 @@
 const clientId = '43f735a675d04dc593023010c69937f3';
-const redirectUri = 'http://localhost:5500/main.html';
+const redirectUri = 'https://fadilbinjabi.github.io/Pied-Piper/main.html';
 const scopes = [
   'user-top-read',
   'playlist-read-private',
