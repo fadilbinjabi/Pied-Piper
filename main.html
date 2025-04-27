@@ -5,10 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SpotifyPlay</title>
   <link rel="stylesheet" href="styles-main.css" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
- 
 </head>
-
 <body>
   <div class="app">
     <header class="header">
@@ -17,37 +14,21 @@
       </div>
       <div class="user-icon-container">
         <img src="" alt="User Icon" class="user-icon" />
-        
       </div>
-      <!-- ... rest of the header content ... -->
     </header>
     <nav class="navigation-container">
       <div class="nav-wrapper">
         <div class="nav-brand">
-          <img src="logo.png" alt="Logo" class="nav-logo" />
           <h1 class="brand-name">SpotifyPlay</h1>
         </div>
         <div class="nav-links">
           <a href="#mood-playlist-container" class="nav-link">Mood Playlist</a>
           <a href="#stats-section" class="nav-link">Stats</a>
         </div>
-        <div class="nav-icons">
-          <a href="#" class="nav-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M3 12h18M12 6l-6 6 6 6M12 6l6 6m0-6l-6 6"/>
-            </svg>
-          </a>
-          <a href="#" class="nav-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M16 8l-8 8M8 8l8 8"/>
-            </svg>
-          </a>
-        </div>
       </div>
     </nav>
     <div class="container">
-      <aside class="sidebar">
+      <aside class="sidebar scrollable">
         <h3>Your Playlists</h3>
         <ul id="user-playlists">
           <!-- Playlists will be dynamically populated here -->
@@ -55,102 +36,108 @@
       </aside>
       <main class="content">
         <!-- Mood-Based Playlist Section -->
-        <div id="mood-playlist-container" class ="section">
-          <h2>Generate Special Playlist</h2>
-          <select id="playlist-type">
-            <option value="sleeping">Sleeping</option>
-            <option value="workout">Workout</option>
-            <option value="dining">Dining</option>
-            <option value="meditation">Meditation</option>
-            <option value="roadtrip">Road Trip</option>
-          </select>
-          
-          <div class="playlist-settings">
-            <div class="setting-group">
-              <label for="playlist-name">Playlist Name</label>
-              <input id="playlist-name" type="text" placeholder="My Awesome Playlist">
+        <div id="mood-playlist-container" class="section">
+          <div class="section-content">
+            <h2>Generate Special Playlist</h2>
+            <select id="playlist-type">
+              <option value="sleeping">Sleeping</option>
+              <option value="workout">Workout</option>
+              <option value="dining">Dining</option>
+              <option value="meditation">Meditation</option>
+              <option value="roadtrip">Road Trip</option>
+            </select>
+            
+            <div class="playlist-settings">
+              <div class="setting-group">
+                <label for="playlist-name">Playlist Name</label>
+                <input id="playlist-name" type="text" placeholder="My Awesome Playlist">
+              </div>
+              
+              <div class="setting-group">
+                <label for="playlist-duration">Duration (songs)</label>
+                <input id="playlist-duration" type="number" min="1" max="50" value="10">
+              </div>
+              
+              <div class="setting-group privacy-toggle">
+                <label for="playlist-privacy">Make Public</label>
+                <label class="switch">
+                  <input id="playlist-privacy" type="checkbox" checked>
+                  <span class="slider round"></span>
+                </label>
+              </div>
+            </div>
+        
+            <!-- Moved Generate Playlist button here -->
+            <button id="generate-playlist-button" onclick="generateSpecialPlaylist()">Generate Playlist</button>
+        
+            <!-- Song Search Section -->
+            <div class="search-section">
+              <h3>Search for Songs</h3>
+              <div class="search-input-container">
+                <input type="text" id="song-search-input" placeholder="Search for songs...">
+                <button id="song-search-button">Search</button>
+              </div>
+              <div id="song-search-results" class="search-results-container"></div>
             </div>
             
-            <div class="setting-group">
-              <label for="playlist-duration">Duration (songs)</label>
-              <input id="playlist-duration" type="number" min="1" max="50" value="10">
-            </div>
-            
-            <div class="setting-group privacy-toggle">
-              <label for="playlist-privacy">Make Public</label>
-              <label class="switch">
-                <input id="playlist-privacy" type="checkbox" checked>
-                <span class="slider round"></span>
-              </label>
-            </div>
+            <ul id="mood-playlist" class="playlist-tracks"></ul>
           </div>
-          
-          <ul id="mood-playlist"></ul>
-          <button id="generate-playlist-button" onclick="generateSpecialPlaylist()">Generate Playlist</button>
-          <button id="save-playlist-button" onclick="savePlaylist()">Save Playlist</button>
         </div>
 
         <!-- Stats Section -->
         <div id="stats-section" class="section">
-          <div class="stats-container">
-            <div class="stats-item">
-              <h2>Top 3 Artists</h2>
-              <ul id="top-artists"></ul>
-              <button onclick="viewFullList('artists', window.fullArtistsList);">View Full List</button>
+          <div class="section-content">
+            <div class="stats-header">
+              <h2>Your Spotify Statistics</h2>
+              <div class="time-range-selector">
+                <button class="time-range-btn active" data-range="long_term">All Time</button>
+                <button class="time-range-btn" data-range="medium_term">Last 6 Months</button>
+                <button class="time-range-btn" data-range="short_term">Last 4 Weeks</button>
+              </div>
             </div>
-            <div class="stats-item">
-              <h2>Top 3 Songs</h2>
-              <ul id="top-songs"></ul>
-              <button onclick="viewFullList('songs', window.fullSongsList);">View Full List</button>
+            
+            <div class="stats-grid">
+              <!-- Top Artists -->
+              <div class="stats-card scrollable">
+                <h3>Top Artists</h3>
+                <ul id="top-artists" class="top-list"></ul>
+                <button onclick="viewFullList('artists', window.fullArtistsList);">View All</button>
+              </div>
+              
+              <!-- Top Tracks -->
+              <div class="stats-card scrollable">
+                <h3>Top Tracks</h3>
+                <ul id="top-songs" class="top-list"></ul>
+                <button onclick="viewFullList('songs', window.fullSongsList);">View All</button>
+              </div>
+              
+              <!-- Top Genres -->
+              <div class="stats-card scrollable">
+                <h3>Top Genres</h3>
+                <ul id="top-genres" class="genres-list"></ul>
+                <button onclick="viewFullList('genres', window.fullGenresList);">View All</button>
+              </div>
+              
+              <!-- Listening Summary -->
+              <div class="stats-card wide-card scrollable">
+                <h3>Listening Summary</h3>
+                <div id="listening-summary" class="summary-grid"></div>
+              </div>
             </div>
-          </div>
-          <div class="stats-container">
-            <div class="stats-item">
-              <h2>Top Genres</h2>
-              <ul id="top-genres"></ul>
-            </div>
-            <div class="stats-item">
-              <h2>Listening History Summary</h2>
-              <p id="listening-summary">Loading your listening history...</p>
-            </div>
-          </div>
-        </section>
-        <!-- Bottom Bar -->
-        <div class="bottom-bar">
-          <div class="player-controls">
-            <button class="previous-button">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polygon points="19 20 9 12 19 4 19 20"></polygon>
-              </svg>
-            </button>
-            <button class="play-pause-button" id="play-pause-button">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" y1="8" x2="12" y2="16"></line>
-              </svg>
-            </button>
-            <button class="next-button">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polygon points="5 20 15 12 5 4 5 20"></polygon>
-              </svg>
-            </button>
-          </div>
-          <div class="song-info">
-            <span id="song-title"></span>
-            <span id="song-artist"></span>
           </div>
         </div>
       </main>
     </div>
-    <!-- Modal for full lists -->
+    <!-- Modal for playlist tracks -->
     <div id="modal" class="modal">
-      <div id="modal-content" class="modal-content">
-        <button id="modal-close" onclick="closeModal()">Close</button>
-        <!-- Full list content will be inserted here -->
-         
+      <div class="modal-container">
+        <div id="modal-content" class="modal-content">
+          <!-- Modal content will be inserted here -->
+        </div>
       </div>
     </div>
   </div>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="spotify-script.js"></script>
 </body>
 </html>
