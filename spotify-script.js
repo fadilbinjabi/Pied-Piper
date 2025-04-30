@@ -1,5 +1,6 @@
 const clientId = '43f735a675d04dc593023010c69937f3';
 const redirectUri = 'http://localhost:5500/main.html';
+
 const scopes = [
   'user-top-read',
   'playlist-read-private',
@@ -110,17 +111,17 @@ async function loadGenreOptions() {
     const allGenres = [...new Set([...sortedGenres, ...GENRES])];
     
     // Create checkboxes for each genre (unchecked by default)
-    genreContainer.innerHTML = allGenres.map(genre => `
-      <div class="genre-option">
-        <input type="checkbox" 
-               id="genre-${genre}" 
-               class="genre-checkbox"> <!-- Removed the 'checked' attribute -->
-        <label for="genre-${genre}" class="genre-label">
-          ${genre}
-        </label>
-      </div>
-    `).join('');
-
+   // In your loadGenreOptions function, modify the HTML generation:
+        genreContainer.innerHTML = allGenres.map(genre => `
+          <div class="genre-option">
+            <input type="checkbox" 
+                   id="genre-${genre}" 
+                   class="genre-checkbox">
+            <label for="genre-${genre}" class="genre-label" style="color: inherit;">
+              ${genre}
+            </label>
+          </div>
+        `).join('');
   } catch (error) {
     console.error('Error loading genres:', error);
     // Fallback to basic genre list if API fails (unchecked by default)
@@ -205,6 +206,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('genre-selection').style.display = 'block';
     loadGenreOptions();
 }
+document.getElementById('logout-button').addEventListener('click', logout);
 
   // Add event listeners for the search functionality
   document.getElementById('song-search-button').addEventListener('click', searchSongs);
@@ -273,6 +275,7 @@ function setupTimeRangeButtons() {
 }
 
 function loginWithSpotify() {
+  // Clear all stored tokens first
   localStorage.removeItem('access_token');
   localStorage.removeItem('refresh_token');
   
@@ -1102,7 +1105,15 @@ async function fetchTopTracks(limit) {
 }
 
 function showGeneratedPlaylist(playlistName, tracks, isPublic) {
-  const tracksHtml = tracks.map((track, index) => `
+  // Initialize tracks array and playlist info
+  window.generatedTracks = Array.isArray(tracks) ? tracks : [];
+  window.currentPlaylistInfo = {
+    name: playlistName || "New Playlist",
+    isPublic: typeof isPublic === 'boolean' ? isPublic : true,
+    tracks: window.generatedTracks
+  };
+
+  const tracksHtml = window.generatedTracks.map((track, index) => `
     <li class="track-item" data-track-id="${track.id}" data-track-uri="${track.uri}">
       <div class="track-number">${index + 1}</div>
       <img src="${track.album?.images?.[0]?.url || 'default.jpg'}" 
@@ -1132,44 +1143,36 @@ function showGeneratedPlaylist(playlistName, tracks, isPublic) {
     </li>
   `).join('');
 
-  // In the showGeneratedPlaylist function, update the modalContent to include a scrollable container:
   const modalContent = `
-  <div class="modal-header">
-    <h3>Generated Playlist: ${playlistName}</h3>
-    <button class="close-button" aria-label="Close modal">×</button>
-  </div>
-  <div class="playlist-actions">
-    <button id="save-final-playlist" class="save-button">Save to Spotify</button>
-    <button id="cancel-playlist" class="cancel-button">Cancel</button>
-  </div>
-  <div class="modal-body">
-    <div class="modal-playlist-container">
-      <ul class="generated-playlist-tracks">${tracksHtml}</ul>
+    <div class="modal-header">
+      <h3>Generated Playlist: ${playlistName}</h3>
+      <button class="close-button" aria-label="Close modal">×</button>
     </div>
-    <div class="add-tracks-section">
-      <h4>Add More Songs</h4>
-      <div class="search-input-container">
-        <input type="text" id="search-tracks" placeholder="Search for songs...">
-        <button id="search-button">Search</button>
+    <div class="playlist-actions">
+      <button id="save-final-playlist" class="save-button">Save to Spotify</button>
+      <button id="cancel-playlist" class="cancel-button">Cancel</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-playlist-container">
+        <ul class="generated-playlist-tracks">${tracksHtml}</ul>
       </div>
-      <div id="search-results-container" class="search-results-container">
-        <div id="search-results" class="search-results"></div>
+      <div class="add-tracks-section">
+        <h4>Add More Songs</h4>
+        <div class="search-input-container">
+          <input type="text" id="search-tracks" placeholder="Search for songs...">
+          <button id="search-button">Search</button>
+        </div>
+        <div id="search-results-container" class="search-results-container">
+          <div id="search-results" class="search-results"></div>
+        </div>
       </div>
     </div>
-  </div>
   `;
 
   openModal(modalContent);
-  
-  window.currentPlaylistInfo = {
-    name: playlistName,
-    isPublic: isPublic,
-    tracks: tracks // Store tracks directly in the object
-  };
 
   document.querySelectorAll('.remove-button').forEach(button => {
     button.addEventListener('click', (e) => {
-      e.stopPropagation();
       const trackId = e.target.closest('button').getAttribute('data-track-id');
       removeTrackFromGeneratedPlaylist(trackId);
     });
@@ -1177,7 +1180,6 @@ function showGeneratedPlaylist(playlistName, tracks, isPublic) {
 
   document.querySelectorAll('.play-button').forEach(button => {
     button.addEventListener('click', (e) => {
-      e.stopPropagation();
       const audioUrl = e.target.closest('button').getAttribute('data-song-url');
       playAudioPreview(audioUrl);
     });
@@ -1193,13 +1195,26 @@ function showGeneratedPlaylist(playlistName, tracks, isPublic) {
     }
   });
 }
-
 function removeTrackFromGeneratedPlaylist(trackId) {
+  // Safety checks
+  if (!window.generatedTracks || !Array.isArray(window.generatedTracks)) {
+    console.error('Generated tracks not properly initialized');
+    return;
+  }
+
+  // Filter out the track
   window.generatedTracks = window.generatedTracks.filter(track => track.id !== trackId);
+  
+  // Update current playlist info
+  if (window.currentPlaylistInfo) {
+    window.currentPlaylistInfo.tracks = window.generatedTracks;
+  }
+
+  // Refresh view
   showGeneratedPlaylist(
-    window.currentPlaylistInfo.name, 
-    window.generatedTracks, 
-    window.currentPlaylistInfo.isPublic
+    window.currentPlaylistInfo?.name || "New Playlist",
+    window.generatedTracks,
+    window.currentPlaylistInfo?.isPublic ?? true
   );
 }
 async function searchTracks() {
@@ -1248,16 +1263,37 @@ async function searchTracks() {
   }
 }
 function addTrackToGeneratedPlaylist(track) {
-  if (window.generatedTracks.some(t => t.id === track.id)) {
+  // Safely initialize if not exists
+  if (!window.generatedTracks) {
+    window.generatedTracks = [];
+  }
+  
+  // Validate track object
+  if (!track || !track.id) {
+    console.error('Invalid track object:', track);
+    return;
+  }
+
+  // Check for existing track
+  const exists = window.generatedTracks.some(t => t.id === track.id);
+  if (exists) {
     alert('This track is already in the playlist');
     return;
   }
-  
+
+  // Add new track
   window.generatedTracks.push(track);
+  
+  // Update current playlist info
+  if (window.currentPlaylistInfo) {
+    window.currentPlaylistInfo.tracks = window.generatedTracks;
+  }
+
+  // Refresh view
   showGeneratedPlaylist(
-    window.currentPlaylistInfo.name, 
-    window.generatedTracks, 
-    window.currentPlaylistInfo.isPublic
+    window.currentPlaylistInfo?.name || "New Playlist",
+    window.generatedTracks,
+    window.currentPlaylistInfo?.isPublic ?? true
   );
 }
 
@@ -1560,6 +1596,19 @@ function addTrackToMoodPlaylist(track) {
     trackElement.remove();
     updateTrackNumbers();
   });
+}
+function logout() {
+  // Clear all stored tokens
+  localStorage.removeItem('access_token');
+  localStorage.removeItem('refresh_token');
+  
+  // Clear any user data
+  userId = null;
+  accessToken = null;
+  refreshToken = null;
+  
+  // Redirect to the login page (which will be the same page)
+  window.location.href = 'http://localhost:5500/intro.html';
 }
 
 function updateTrackNumbers() {
