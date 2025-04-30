@@ -3,30 +3,48 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SpotifyPlay</title>
+  <title>PiedPiper</title>
   <link rel="stylesheet" href="styles-main.css" />
 </head>
 <body>
   <div class="app">
-    <header class="header">
+    <header class="header"> 
       <div class="logo-container">
         <img src="logo.png" alt="Spotify Logo" class="logo" />
       </div>
-      <div class="user-icon-container">
-        <img src="" alt="User Icon" class="user-icon" />
+      <h1 class="brand-name">PiedPiper</h1>
+      <div class="header-controls">
+        <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">
+          <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+          <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/>
+            <line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/>
+            <line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+        </button>
+        <div class="user-icon-container">
+          <img src="" alt="User Icon" class="user-icon" />
+        </div>
       </div>
     </header>
+    
     <nav class="navigation-container">
       <div class="nav-wrapper">
-        <div class="nav-brand">
-          <h1 class="brand-name">SpotifyPlay</h1>
-        </div>
         <div class="nav-links">
           <a href="#mood-playlist-container" class="nav-link">Mood Playlist</a>
           <a href="#stats-section" class="nav-link">Stats</a>
         </div>
       </div>
     </nav>
+    
     <div class="container">
       <aside class="sidebar scrollable">
         <h3>Your Playlists</h3>
@@ -34,6 +52,7 @@
           <!-- Playlists will be dynamically populated here -->
         </ul>
       </aside>
+      
       <main class="content">
         <!-- Mood-Based Playlist Section -->
         <div id="mood-playlist-container" class="section">
@@ -45,7 +64,23 @@
               <option value="dining">Dining</option>
               <option value="meditation">Meditation</option>
               <option value="roadtrip">Road Trip</option>
+              <option value="ai">AI Custom (prototype)</option>
             </select>
+            
+            <div id="ai-prompt-container" style="display: none; margin-top: 15px;">
+              <label for="ai-prompt" style="display: block; margin-bottom: 8px; color: #b3b3b3;">
+                Describe your perfect playlist:
+              </label>
+              <textarea 
+                id="ai-prompt" 
+                placeholder="Example: 'Upbeat 80s rock with female vocals'" 
+                style="width: 100%; padding: 12px 15px; background: #282828; border: 1px solid #383838; border-radius: 5px; color: white; font-size: 1rem; min-height: 80px; resize: vertical;"></textarea>
+            </div>
+            
+            <div id="genre-selection" style="display: none; margin-top: 15px;">
+              <h3>Select Genres</h3>
+              <div class="genre-options" id="genre-options"></div>
+            </div>
             
             <div class="playlist-settings">
               <div class="setting-group">
@@ -54,7 +89,7 @@
               </div>
               
               <div class="setting-group">
-                <label for="playlist-duration">Duration (songs)</label>
+                <label for="playlist-duration">Number of Songs</label>
                 <input id="playlist-duration" type="number" min="1" max="50" value="10">
               </div>
               
@@ -67,7 +102,6 @@
               </div>
             </div>
         
-            <!-- Moved Generate Playlist button here -->
             <button id="generate-playlist-button" onclick="generateSpecialPlaylist()">Generate Playlist</button>
         
             <!-- Song Search Section -->
@@ -128,6 +162,7 @@
         </div>
       </main>
     </div>
+    
     <!-- Modal for playlist tracks -->
     <div id="modal" class="modal">
       <div class="modal-container">
@@ -137,6 +172,7 @@
       </div>
     </div>
   </div>
+  
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="spotify-script.js"></script>
 </body>
