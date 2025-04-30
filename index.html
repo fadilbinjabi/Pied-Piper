@@ -196,7 +196,14 @@
     function loginWithSpotify() {
       const clientId = '43f735a675d04dc593023010c69937f3';
       const redirectUri = 'https://fadilbinjabi.github.io/Pied-Piper/main.html';
-      const scopes = 'user-top-read playlist-read-private';
+      const scopes = [
+          'user-top-read',
+          'playlist-read-private',
+          'playlist-modify-private', 
+          'playlist-modify-public',
+          'user-read-email',
+          'user-read-private'
+        ].join(' ');
       const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(
         redirectUri
       )}&scope=${encodeURIComponent(scopes)}`;
