@@ -844,7 +844,7 @@ input:checked + .slider:before {
 /* Loading state for buttons */
 button.loading {
   position: relative;
-  color: transparent;
+  color: transparent !important;
   pointer-events: none;
 }
 
@@ -856,7 +856,7 @@ button.loading::after {
   transform: translate(-50%, -50%);
   width: 20px;
   height: 20px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 3px solid rgba(255, 255, 255, 0.3);
   border-top-color: white;
   border-radius: 50%;
   animation: spin 1s linear infinite;
@@ -1517,6 +1517,32 @@ button.loading::after {
 }
 
 /* ===== Enhanced Light Mode Colors ===== */
+body.light-mode .modal-container {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+}
+
+body.light-mode .modal-header {
+  background: #f7fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+body.light-mode .modal-header h3 {
+  color: #2d3748;
+}
+
+body.light-mode .modal-playlist-container {
+  background: #ffffff;
+}
+
+body.light-mode .generated-playlist-tracks .track-name {
+  color: #2d3748;
+}
+
+body.light-mode .generated-playlist-tracks .track-artist {
+  color: #718096;
+}
+
 body.light-mode {
   background: linear-gradient(180deg, #f5f7fa 0%, #e6e9f0 100%);
   color: #2d3748;
@@ -1914,8 +1940,87 @@ body.light-mode .back-button svg {
   border-radius: 8px;
   margin-bottom: 15px;
 }
+/* Add near the theme-toggle styles */
+.logout-button {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
+.logout-button:hover {
+  background: rgba(255, 107, 107, 0.2);
+}
 
+.logout-button svg {
+  width: 20px;
+  height: 20px;
+  stroke: #b3b3b3;
+  transition: all 0.3s ease;
+}
+
+.logout-button:hover svg {
+  stroke: #ff6b6b;
+}
+
+/* Light mode styles */
+body.light-mode .logout-button {
+  background: rgba(74, 85, 104, 0.1);
+}
+
+body.light-mode .logout-button:hover {
+  background: rgba(245, 101, 101, 0.2);
+}
+
+body.light-mode .logout-button svg {
+  stroke: #4a5568;
+}
+
+body.light-mode .logout-button:hover svg {
+  stroke: #c53030;
+}
+/* Add this to your existing genre styles */
+.genre-label {
+  display: inline-block;
+  padding: 8px 15px;
+  background: #383838;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  color: #b3b3b3; /* Default text color */
+}
+
+/* Light mode specific styles */
+body.light-mode .genre-label {
+  background: #e2e8f0;
+  color: #4a5568; /* Better contrast for light mode */
+  border: 1px solid #cbd5e0;
+}
+
+body.light-mode .genre-checkbox:checked + .genre-label {
+  background: #1DB954;
+  color: white;
+  border-color: #1DB954;
+}
+
+/* Hover states */
+.genre-label:hover {
+  background: #484848;
+  color: white;
+}
+
+body.light-mode .genre-label:hover {
+  background: #cbd5e0;
+  color: #2d3748;
+}
 .genre-options {
   display: flex;
   flex-wrap: wrap;
@@ -1937,15 +2042,16 @@ body.light-mode .back-button svg {
   font-size: 14px;
 }
 .loading-spinner {
-  width: 20px;
-  height: 20px;
-  border: 3px solid rgba(29, 185, 84, 0.3);
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(29, 185, 84, 0.2);
   border-top-color: #1DB954;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto;
+  display: inline-block;
+  vertical-align: middle;
 }
-
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
