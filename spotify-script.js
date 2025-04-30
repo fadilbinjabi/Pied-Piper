@@ -1,5 +1,5 @@
 const clientId = '43f735a675d04dc593023010c69937f3';
-const redirectUri = 'https://fadilbinjabi.github.io/Pied-Piper/main.html';
+const redirectUri = 'http://localhost:5500/main.html';
 const scopes = [
   'user-top-read',
   'playlist-read-private',
@@ -8,7 +8,48 @@ const scopes = [
   'user-read-email',
   'user-read-private'
 ].join(' ');
+// Add this near the top with your other constants
+const DEEPSEEK_API_KEY = 'sk-fd393ae6bef24eacb3bf6055ae6788df'; // Replace with your actual key
+//const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions'; // Verify the correct endpoint
+console.log("Using API Key:", DEEPSEEK_API_KEY?.slice(0, 5) + '...'); // Log first 5 chars
+async function testDeepSeekAPI() {
+  const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer sk-fd393ae6bef24eacb3bf6055ae6788df` // Replace!
+    },
+    body: JSON.stringify({
+      model: "deepseek-chat",
+      messages: [{ role: "user", content: "Say 'TEST'" }]
+    })
+  });
+  
+  console.log("HTTP Status:", response.status);
+  console.log("Response:", await response.json());
+}
 
+testDeepSeekAPI();
+// Add this near the top with your other constants
+const GENRES = ['acoustic', 'instrumental', 'rock', 'rap', 'jazz', 'pop'];
+
+const PLAYLIST_TYPES = {
+  'sleeping': {
+    genreOrder: ['instrumental', 'acoustic', 'jazz']
+  },
+  'workout': {
+    genreOrder: ['rap', 'rock', 'pop']
+  },
+  'dining': {
+    genreOrder: ['jazz', 'acoustic', 'instrumental']
+  },
+  'meditation': {
+    genreOrder: ['instrumental', 'acoustic', 'jazz']
+  },
+  'roadtrip': {
+    genreOrder: ['rock', 'pop', 'acoustic']
+  }
+};
 let userId;
 let accessToken;
 let refreshToken;
@@ -21,8 +62,118 @@ let chartInstances = {
   genres: null,
   fullView: null
 };
+let aiRequestQueue = [];
+let isProcessingQueue = false;
+
+async function processAIQueue() {
+  if (isProcessingQueue || aiRequestQueue.length === 0) return;
+  
+  isProcessingQueue = true;
+  const { resolve, reject, prompt, limit } = aiRequestQueue.shift();
+  
+  try {
+    const result = await generateAIPlaylist(prompt, limit);
+    resolve(result);
+  } catch (error) {
+    reject(error);
+  } finally {
+    isProcessingQueue = false;
+    setTimeout(processAIQueue, 1000); // 1 second between requests
+  }
+}
+async function loadGenreOptions() {
+  const genreContainer = document.getElementById('genre-options');
+  genreContainer.innerHTML = '<div class="loading-spinner"></div>'; // Show loading state
+
+  try {
+    // First get user's top artists to determine preferred genres
+    const response = await makeRequest('https://api.spotify.com/v1/me/top/artists?limit=50');
+    const data = await response.json();
+    
+    // Count genre occurrences
+    const genreCounts = {};
+    data.items.forEach(artist => {
+      artist.genres.forEach(genre => {
+        const simplified = simplifyGenre(genre);
+        if (GENRES.includes(simplified)) {
+          genreCounts[simplified] = (genreCounts[simplified] || 0) + 1;
+        }
+      });
+    });
+
+    // Sort genres by frequency
+    const sortedGenres = Object.entries(genreCounts)
+      .sort((a, b) => b[1] - a[1])
+      .map(([genre]) => genre);
+
+    // Combine with all available genres and remove duplicates
+    const allGenres = [...new Set([...sortedGenres, ...GENRES])];
+    
+    // Create checkboxes for each genre (unchecked by default)
+    genreContainer.innerHTML = allGenres.map(genre => `
+      <div class="genre-option">
+        <input type="checkbox" 
+               id="genre-${genre}" 
+               class="genre-checkbox"> <!-- Removed the 'checked' attribute -->
+        <label for="genre-${genre}" class="genre-label">
+          ${genre}
+        </label>
+      </div>
+    `).join('');
+
+  } catch (error) {
+    console.error('Error loading genres:', error);
+    // Fallback to basic genre list if API fails (unchecked by default)
+    genreContainer.innerHTML = GENRES.map(genre => `
+      <div class="genre-option">
+        <input type="checkbox" 
+               id="genre-${genre}" 
+               class="genre-checkbox"> <!-- Removed the 'checked' attribute -->
+        <label for="genre-${genre}" class="genre-label">
+          ${genre}
+        </label>
+      </div>
+    `).join('');
+  }
+}
+document.getElementById('playlist-type').addEventListener('change', function() {
+  const aiContainer = document.getElementById('ai-prompt-container');
+  const genreContainer = document.getElementById('genre-selection');
+  
+  if (this.value === 'ai') {
+      aiContainer.style.display = 'block';
+      genreContainer.style.display = 'none';
+  } else {
+      aiContainer.style.display = 'none';
+      genreContainer.style.display = 'block';
+      // Only load genres if not already loaded
+      if (document.querySelectorAll('.genre-option').length === 0) {
+          loadGenreOptions();
+      }
+  }
+  
+  // Clear AI prompt when switching away from AI
+  if (this.value !== 'ai') {
+      document.getElementById('ai-prompt').value = '';
+  }
+});
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Theme toggle functionality
+    const themeToggle = document.getElementById('theme-toggle');
+    const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
+    
+    // Check for saved theme preference or use system preference
+    const currentTheme = localStorage.getItem('theme');
+    if (currentTheme === 'light' || (!currentTheme && !prefersDarkScheme.matches)) {
+      document.body.classList.add('light-mode');
+    }
+  
+    themeToggle.addEventListener('click', function() {
+      document.body.classList.toggle('light-mode');
+      const theme = document.body.classList.contains('light-mode') ? 'light' : 'dark';
+      localStorage.setItem('theme', theme);
+    });
   const firstSection = document.querySelector('.section');
   if (firstSection) {
     firstSection.classList.add('active');
@@ -49,15 +200,21 @@ document.addEventListener('DOMContentLoaded', function() {
     loadUserData();
     setupModalHandlers();
     setupTimeRangeButtons();
-  }
+    
+    // Load genre options immediately
+    document.getElementById('genre-selection').style.display = 'block';
+    loadGenreOptions();
+}
 
-  // Add event listeners for the new search functionality
+  // Add event listeners for the search functionality
   document.getElementById('song-search-button').addEventListener('click', searchSongs);
   document.getElementById('song-search-input').addEventListener('keypress', function(e) {
     if (e.key === 'Enter') {
       searchSongs();
     }
   });
+
+  // Add event listener for AI prompt checkbox
 });
 
 function setupNavigation() {
@@ -118,6 +275,7 @@ function setupTimeRangeButtons() {
 function loginWithSpotify() {
   localStorage.removeItem('access_token');
   localStorage.removeItem('refresh_token');
+  
   const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}&show_dialog=true`;
   window.location.href = authUrl;
 }
@@ -156,7 +314,7 @@ async function makeRequest(url, options = {}) {
   
   if (!options.headers) options.headers = {};
   options.headers.Authorization = `Bearer ${accessToken}`;
-  
+  options.mode = 'cors';
   let response = await fetch(url, options);
   
   if (response.status === 401) {
@@ -510,10 +668,19 @@ function renderFullViewChart(elementId, chartType, labels, data, title) {
         datasets: [{
           label: title,
           data: data,
-          backgroundColor: chartType === 'pie' ? [
-            '#1DB954', '#1ED760', '#1AA34A', '#169C42', '#12853A',
-            '#0F7232', '#0B5F2A', '#084C22', '#04391A', '#012612'
-          ] : '#1DB954',
+          backgroundColor: chartType === 'pie' ? 
+                     [
+                       '#4E79A7', // muted blue
+                       '#F28E2B', // orange
+                       '#E15759', // red
+                       '#76B7B2', // teal
+                       '#59A14F', // green
+                       '#EDC948', // yellow-gold
+                       '#B07AA1', // purple
+                       '#FF9DA7', // soft pink
+                       '#9C755F', // brownish
+                       '#BAB0AC'  // neutral gray
+                     ].sort(() => Math.random() - 0.5) : '#1DB954',
           borderColor: '#1DB954',
           borderWidth: 1
         }]
@@ -627,6 +794,12 @@ async function createPlaylist(name, description, isPublic) {
     
     if (!response.ok) {
       const errorData = await response.json();
+      if (errorData.error && errorData.error.message.includes('scope')) {
+        // Handle insufficient scope error
+        showError('Missing required permissions. Please log in again.');
+        loginWithSpotify(); // Force re-authentication
+        return;
+      }
       throw new Error(errorData.error?.message || 'Failed to create playlist');
     }
     
@@ -636,7 +809,6 @@ async function createPlaylist(name, description, isPublic) {
     throw new Error(`Playlist creation failed: ${error.message}`);
   }
 }
-
 async function addTracksToPlaylist(playlistId, trackUris) {
   try {
     const response = await makeRequest(
@@ -665,44 +837,262 @@ async function addTracksToPlaylist(playlistId, trackUris) {
   }
 }
 
+
+function getSelectedGenres() {
+  const checkboxes = document.querySelectorAll('.genre-checkbox:checked');
+  const selectedGenres = Array.from(checkboxes).map(cb => cb.id.replace('genre-', ''));
+  
+  if (selectedGenres.length === 0) {
+    showError('Please select at least one genre');
+    return null;
+  }
+  
+  return selectedGenres;
+}
+function showError(message) {
+  const errorElement = document.createElement('div');
+  errorElement.className = 'error-message';
+  errorElement.textContent = message;
+  
+  const container = document.getElementById('mood-playlist-container');
+  container.prepend(errorElement);
+  
+  setTimeout(() => errorElement.remove(), 5000);
+}
+function showError(message) {
+  const errorElement = document.createElement('div');
+  errorElement.className = 'error-message';
+  errorElement.textContent = message;
+  
+  const container = document.getElementById('mood-playlist-container');
+  container.prepend(errorElement);
+  
+  setTimeout(() => errorElement.remove(), 5000);
+}
+async function getSeedTracks() {
+  try {
+    const response = await makeRequest('https://api.spotify.com/v1/me/top/tracks?limit=5');
+    const data = await response.json();
+    return data.items.map(track => track.id);
+  } catch (error) {
+    console.error('Error getting seed tracks:', error);
+    return [];
+  }
+}
+async function getRecommendedTracks(seedTracks, genres, limit) {
+  try {
+    if (seedTracks.length > 0) {
+      const response = await makeRequest(
+        `https://api.spotify.com/v1/recommendations?limit=${limit}&seed_tracks=${seedTracks.join(',')}`
+      );
+      const data = await response.json();
+      
+      if (data.tracks.length > 0) {
+        return data.tracks.filter(track => 
+          track.artists.some(artist => 
+            artist.genres?.some(genre => genres.includes(simplifyGenre(genre)))
+        ).slice(0, limit));
+      }
+    }
+    
+    return await getTracksByGenres(genres, limit);
+    
+  } catch (error) {
+    console.error('Error getting recommendations:', error);
+    return await getTracksByGenres(genres, limit);
+  }
+}
+async function getTracksByGenres(genres, limit) {
+  const tracks = [];
+  let genreIndex = 0;
+  
+  while (tracks.length < limit && genreIndex < genres.length * 3) {
+    const genre = genres[genreIndex % genres.length];
+    try {
+      const response = await makeRequest(
+        `https://api.spotify.com/v1/search?q=genre:${encodeURIComponent(genre)}&type=track&limit=5`
+      );
+      const data = await response.json();
+      
+      data.tracks.items.forEach(track => {
+        if (tracks.length < limit && !tracks.some(t => t.id === track.id)) {
+          tracks.push(track);
+        }
+      });
+    } catch (error) {
+      console.error(`Error searching genre ${genre}:`, error);
+    }
+    
+    genreIndex++;
+    await new Promise(resolve => setTimeout(resolve, 300));
+  }
+  
+  return tracks;
+}
+async function fetchTopTracks(limit) {
+  const response = await makeRequest(
+    `https://api.spotify.com/v1/me/top/tracks?limit=${limit}`
+  );
+  const tracksData = await response.json();
+  return tracksData.items;
+}
+
+
+
+
+
+// Playlist Generation
 async function generateSpecialPlaylist() {
   const button = document.getElementById('generate-playlist-button');
   button.classList.add('loading');
   
   try {
     const playlistType = document.getElementById('playlist-type').value;
+    const isAI = playlistType === 'ai';
     const playlistName = document.getElementById('playlist-name').value || 
-                         `My ${playlistType} Playlist`;
-    const playlistDuration = document.getElementById('playlist-duration').value;
+                       `My ${playlistType} Playlist`;
+    const trackCount = parseInt(document.getElementById('playlist-duration').value);
     const isPublic = document.getElementById('playlist-privacy').checked;
 
-    // Get tracks from both the search results and the mood playlist
-    const moodPlaylistTracks = Array.from(document.getElementById('mood-playlist').children).map(item => {
-      return {
-        uri: item.getAttribute('data-track-uri')
-      };
-    });
-
-    // If we have manually added tracks, use those, otherwise fetch top tracks
-    let tracksToAdd = moodPlaylistTracks.length > 0 
-      ? moodPlaylistTracks 
-      : await fetchTopTracks(playlistDuration);
-
-    if (tracksToAdd.length === 0) {
-      throw new Error('No tracks available to create playlist');
+    if (trackCount < 1 || trackCount > 50) {
+      throw new Error('Playlist must contain 1-50 songs');
     }
 
-    window.generatedTracks = tracksToAdd;
+    let tracksToAdd = [];
+    
+    if (isAI) {
+      const aiPrompt = document.getElementById('ai-prompt').value.trim();
+      if (!aiPrompt) throw new Error('Please describe your playlist idea');
+      
+      tracksToAdd = await generateAIPlaylist(aiPrompt, trackCount);
+    } else {
+      const manualTracks = Array.from(document.getElementById('mood-playlist').children).map(item => ({
+        uri: item.getAttribute('data-track-uri'),
+        id: item.getAttribute('data-track-id'),
+        name: item.querySelector('.track-name').textContent,
+        artists: [{ name: item.querySelector('.track-artist').textContent }],
+        album: {
+          images: [{ url: item.querySelector('img').src }]
+        },
+        external_urls: {
+          spotify: item.querySelector('.spotify-link-button').href
+        },
+        preview_url: item.querySelector('.play-button')?.getAttribute('data-song-url') || null
+      }));
+
+      if (manualTracks.length > 0) {
+        tracksToAdd = manualTracks.slice(0, trackCount);
+      } else {
+        const selectedGenres = getSelectedGenres();
+        if (selectedGenres.length === 0) {
+          throw new Error('Please select at least one genre');
+        }
+
+        const seedTracks = await getSeedTracks();
+        tracksToAdd = await getRecommendedTracks(seedTracks, selectedGenres, trackCount);
+      }
+    }
+
+    if (tracksToAdd.length === 0) {
+      throw new Error('Failed to find tracks for your playlist');
+    }
+
+    tracksToAdd = tracksToAdd.slice(0, trackCount);
     showGeneratedPlaylist(playlistName, tracksToAdd, isPublic);
     
   } catch (error) {
-    console.error("Error generating playlist:", error);
-    alert(`Error: ${error.message}`);
+    showError(error.message);
   } finally {
     button.classList.remove('loading');
   }
 }
 
+async function generateAIPlaylist(prompt, limit) {
+  try {
+    // Show loading state
+    document.getElementById('generation-status').textContent = 
+      "🧠 AI is generating your playlist...";
+    
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: "deepseek-chat",
+        messages: [{
+          role: "user",
+          content: `Suggest ${limit} exact song titles and artists for a Spotify playlist based on: "${prompt}". 
+                    Return ONLY a JSON array like this: 
+                    [{"name":"Song Title","artist":"Artist Name"},...]`
+        }],
+        temperature: 0.7
+      })
+    });
+
+    if (!response.ok) throw new Error('AI request failed');
+    
+    const data = await response.json();
+    let songs;
+    
+    try {
+      // Try to parse the AI response
+      songs = JSON.parse(data.choices[0].message.content);
+    } catch (e) {
+      // Fallback if the response isn't perfect JSON
+      songs = extractSongsFromText(data.choices[0].message.content);
+    }
+
+    // Search Spotify for each song
+    const spotifyTracks = [];
+    for (const song of songs) {
+      try {
+        const searchResponse = await makeRequest(
+          `https://api.spotify.com/v1/search?q=track:${encodeURIComponent(song.name)} artist:${encodeURIComponent(song.artist)}&type=track&limit=1`
+        );
+        const searchData = await searchResponse.json();
+        if (searchData.tracks.items[0]) {
+          spotifyTracks.push(searchData.tracks.items[0]);
+        }
+      } catch (error) {
+        console.error(`Couldn't find song: ${song.name} by ${song.artist}`, error);
+      }
+      
+      // Avoid rate limiting
+      await new Promise(resolve => setTimeout(resolve, 200));
+    }
+
+    return spotifyTracks;
+    
+  } catch (error) {
+    console.error('AI generation failed:', error);
+    // Fallback to top tracks if AI fails
+    return await fetchTopTracks(limit);
+  } finally {
+    document.getElementById('generation-status').textContent = "";
+  }
+}
+
+// Helper function to extract songs if JSON parse fails
+function extractSongsFromText(text) {
+  const lines = text.split('\n').filter(line => line.trim());
+  const songs = [];
+  
+  lines.forEach(line => {
+    const match = line.match(/"name":"([^"]+)","artist":"([^"]+)"/) || 
+                 line.match(/"title":"([^"]+)","artist":"([^"]+)"/) ||
+                 line.match(/(.+)\s+by\s+(.+)/i);
+    if (match) {
+      songs.push({
+        name: match[1].trim(),
+        artist: match[2].trim()
+      });
+    }
+  });
+  
+  return songs;
+}
 async function fetchTopTracks(limit) {
   const response = await makeRequest(
     `https://api.spotify.com/v1/me/top/tracks?limit=${limit}`
@@ -742,29 +1132,39 @@ function showGeneratedPlaylist(playlistName, tracks, isPublic) {
     </li>
   `).join('');
 
+  // In the showGeneratedPlaylist function, update the modalContent to include a scrollable container:
   const modalContent = `
-    <div class="modal-header">
-      <h3>Generated Playlist: ${playlistName}</h3>
-      <button class="close-button" aria-label="Close modal">×</button>
+  <div class="modal-header">
+    <h3>Generated Playlist: ${playlistName}</h3>
+    <button class="close-button" aria-label="Close modal">×</button>
+  </div>
+  <div class="playlist-actions">
+    <button id="save-final-playlist" class="save-button">Save to Spotify</button>
+    <button id="cancel-playlist" class="cancel-button">Cancel</button>
+  </div>
+  <div class="modal-body">
+    <div class="modal-playlist-container">
+      <ul class="generated-playlist-tracks">${tracksHtml}</ul>
     </div>
-    <div class="playlist-actions">
-      <button id="save-final-playlist" class="save-button">Save to Spotify</button>
-      <button id="cancel-playlist" class="cancel-button">Cancel</button>
-    </div>
-    <ul class="generated-playlist-tracks">${tracksHtml}</ul>
     <div class="add-tracks-section">
       <h4>Add More Songs</h4>
-      <input type="text" id="search-tracks" placeholder="Search for songs...">
-      <button id="search-button">Search</button>
-      <div id="search-results"></div>
+      <div class="search-input-container">
+        <input type="text" id="search-tracks" placeholder="Search for songs...">
+        <button id="search-button">Search</button>
+      </div>
+      <div id="search-results-container" class="search-results-container">
+        <div id="search-results" class="search-results"></div>
+      </div>
     </div>
+  </div>
   `;
 
   openModal(modalContent);
   
   window.currentPlaylistInfo = {
     name: playlistName,
-    isPublic: isPublic
+    isPublic: isPublic,
+    tracks: tracks // Store tracks directly in the object
   };
 
   document.querySelectorAll('.remove-button').forEach(button => {
@@ -802,7 +1202,6 @@ function removeTrackFromGeneratedPlaylist(trackId) {
     window.currentPlaylistInfo.isPublic
   );
 }
-
 async function searchTracks() {
   const query = document.getElementById('search-tracks').value.trim();
   if (!query) return;
@@ -813,7 +1212,7 @@ async function searchTracks() {
 
   try {
     const response = await makeRequest(
-      `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=5`
+      `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=10`
     );
     const data = await response.json();
     
@@ -842,13 +1241,12 @@ async function searchTracks() {
     
   } catch (error) {
     console.error('Search failed:', error);
-    document.getElementById('search-results').innerHTML = '<p>Error searching for tracks</p>';
+    document.getElementById('search-results').innerHTML = '<p class="error-message">Error searching for tracks</p>';
   } finally {
     searchButton.disabled = false;
     searchButton.textContent = 'Search';
   }
 }
-
 function addTrackToGeneratedPlaylist(track) {
   if (window.generatedTracks.some(t => t.id === track.id)) {
     alert('This track is already in the playlist');
@@ -865,42 +1263,44 @@ function addTrackToGeneratedPlaylist(track) {
 
 async function saveFinalPlaylist() {
   const button = document.getElementById('save-final-playlist');
-  const originalText = button.textContent;
   button.disabled = true;
   button.textContent = 'Saving...';
-  
+
   try {
-    if (!window.generatedTracks || window.generatedTracks.length === 0) {
-      throw new Error('No tracks to save in the playlist');
+    // Use the tracks stored in currentPlaylistInfo
+    const { name, isPublic, tracks } = window.currentPlaylistInfo;
+    
+    if (!tracks || tracks.length === 0) {
+      throw new Error('No tracks available to save');
     }
 
+    // Create playlist
     const playlist = await createPlaylist(
-      window.currentPlaylistInfo.name,
-      "Created with SpotifyPlay",
-      window.currentPlaylistInfo.isPublic
+      name,
+      "Created with PiedPiper",
+      isPublic
     );
-    
-    const trackUris = window.generatedTracks
+
+    // Prepare track URIs
+    const trackUris = tracks
       .filter(track => track.uri)
       .map(track => track.uri);
-    
-    if (trackUris.length === 0) {
-      throw new Error('No valid track URIs found');
-    }
 
+    // Add tracks in batches of 100
     const batchSize = 100;
     for (let i = 0; i < trackUris.length; i += batchSize) {
       const batch = trackUris.slice(i, i + batchSize);
       await addTracksToPlaylist(playlist.id, batch);
     }
-    
+
+    // Show success message
     const successContent = `
       <div class="modal-header">
-        <h3>Playlist Saved Successfully!</h3>
-        <button class="close-button" aria-label="Close modal">×</button>
+        <h3>Playlist Saved!</h3>
+        <button class="close-button">×</button>
       </div>
       <div class="success-message">
-        <p>Your playlist "${window.currentPlaylistInfo.name}" has been saved to Spotify.</p>
+        <p>"${name}" is now in your Spotify library.</p>
         <a href="${playlist.external_urls.spotify}" target="_blank" class="success-link">
           Open in Spotify
         </a>
@@ -908,49 +1308,29 @@ async function saveFinalPlaylist() {
     `;
     
     openModal(successContent);
-    document.querySelector('.close-button').addEventListener('click', closeModal);
-    
-    await fetchUserPlaylists();
     
   } catch (error) {
-    console.error("Error saving playlist:", error);
-    
-    let errorMessage = error.message;
-    if (error.message.includes('Insufficient client scope')) {
-      errorMessage = 'Missing permissions. Please log in again.';
-    }
-
-    const errorContent = `
-      <div class="modal-header">
-        <h3>Error Saving Playlist</h3>
-        <button class="close-button" aria-label="Close modal">×</button>
-      </div>
-      <div class="error-message">
-        <p>${errorMessage}</p>
-        ${error.response ? `<p>Status: ${error.response.status}</p>` : ''}
-        <button id="retry-save" class="save-button">Try Again</button>
-        ${error.message.includes('Insufficient client scope') ? 
-          `<button id="reauthorize" class="save-button">Re-authorize</button>` : ''}
-      </div>
-    `;
-    
-    openModal(errorContent);
-    document.querySelector('.close-button').addEventListener('click', closeModal);
-    document.getElementById('retry-save').addEventListener('click', saveFinalPlaylist);
-    
-    if (error.message.includes('Insufficient client scope')) {
-      document.getElementById('reauthorize').addEventListener('click', () => {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        loginWithSpotify();
-      });
-    }
+    console.error("Save failed:", error);
+    if (error.message.includes('scope')) {
+      const errorContent = `
+        <div class="modal-header">
+          <h3>Permission Required</h3>
+          <button class="close-button">×</button>
+        </div>
+        <div class="error-message">
+          <p>We need additional permissions to create playlists.</p>
+          <button id="reauthorize" class="save-button">Grant Permissions</button>
+        </div>
+      `;
+      
+      openModal(errorContent);
+      document.getElementById('reauthorize').addEventListener('click', loginWithSpotify);
+    }  
   } finally {
     button.disabled = false;
-    button.textContent = originalText;
+    button.textContent = 'Save to Spotify';
   }
 }
-
 async function showPlaylistTracks(playlistId, playlistName) {
   try {
     const response = await makeRequest(
@@ -1051,7 +1431,7 @@ function closeModal() {
   modal.removeAttribute('role');
 }
 
-/* ===== New Song Search Functionality ===== */
+/* ===== Song Search Functionality ===== */
 async function searchSongs() {
   const query = document.getElementById('song-search-input').value.trim();
   if (!query) return;
