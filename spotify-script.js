@@ -36,19 +36,19 @@ const GENRES = ['acoustic', 'instrumental', 'rock', 'rap', 'jazz', 'pop'];
 
 const PLAYLIST_TYPES = {
   'sleeping': {
-    genreOrder: ['instrumental', 'acoustic', 'jazz']
+    genreOrder: ['instrumental', 'acoustic', 'jazz'] // IDs 2, 1, 5
   },
   'workout': {
-    genreOrder: ['rap', 'rock', 'pop']
+    genreOrder: ['rap', 'rock', 'pop'] // IDs 4, 3, 6
   },
   'dining': {
-    genreOrder: ['jazz', 'acoustic', 'instrumental']
+    genreOrder: ['jazz', 'acoustic', 'instrumental'] // IDs 5, 1, 2
   },
   'meditation': {
-    genreOrder: ['instrumental', 'acoustic', 'jazz']
+    genreOrder: ['instrumental', 'acoustic', 'jazz'] // IDs 2, 1, 5
   },
   'roadtrip': {
-    genreOrder: ['rock', 'pop', 'acoustic']
+    genreOrder: ['rock', 'pop', 'acoustic'] // IDs 3, 6, 1
   }
 };
 let userId;
@@ -84,7 +84,7 @@ async function processAIQueue() {
 }
 async function loadGenreOptions() {
   const genreContainer = document.getElementById('genre-options');
-  genreContainer.innerHTML = '<div class="loading-spinner"></div>'; // Show loading state
+  genreContainer.innerHTML = '<div class="loading-spinner"></div>';
 
   try {
     // First get user's top artists to determine preferred genres
@@ -110,31 +110,42 @@ async function loadGenreOptions() {
     // Combine with all available genres and remove duplicates
     const allGenres = [...new Set([...sortedGenres, ...GENRES])];
     
-    // Create checkboxes for each genre (unchecked by default)
-   // In your loadGenreOptions function, modify the HTML generation:
-        genreContainer.innerHTML = allGenres.map(genre => `
-          <div class="genre-option">
-            <input type="checkbox" 
-                   id="genre-${genre}" 
-                   class="genre-checkbox">
-            <label for="genre-${genre}" class="genre-label" style="color: inherit;">
-              ${genre}
-            </label>
-          </div>
-        `).join('');
-  } catch (error) {
-    console.error('Error loading genres:', error);
-    // Fallback to basic genre list if API fails (unchecked by default)
-    genreContainer.innerHTML = GENRES.map(genre => `
+    // Create checkboxes for each genre
+    genreContainer.innerHTML = allGenres.map(genre => `
       <div class="genre-option">
         <input type="checkbox" 
                id="genre-${genre}" 
-               class="genre-checkbox"> <!-- Removed the 'checked' attribute -->
+               class="genre-checkbox">
         <label for="genre-${genre}" class="genre-label">
           ${genre}
         </label>
       </div>
     `).join('');
+    
+    // After loading, select default genres if a playlist type is already selected
+    const playlistType = document.getElementById('playlist-type').value;
+    if (playlistType !== 'ai') {
+      selectDefaultGenres(playlistType);
+    }
+  } catch (error) {
+    console.error('Error loading genres:', error);
+    // Fallback to basic genre list if API fails
+    genreContainer.innerHTML = GENRES.map(genre => `
+      <div class="genre-option">
+        <input type="checkbox" 
+               id="genre-${genre}" 
+               class="genre-checkbox">
+        <label for="genre-${genre}" class="genre-label">
+          ${genre}
+        </label>
+      </div>
+    `).join('');
+    
+    // Select default genres if needed
+    const playlistType = document.getElementById('playlist-type').value;
+    if (playlistType !== 'ai') {
+      selectDefaultGenres(playlistType);
+    }
   }
 }
 document.getElementById('playlist-type').addEventListener('change', function() {
@@ -142,22 +153,47 @@ document.getElementById('playlist-type').addEventListener('change', function() {
   const genreContainer = document.getElementById('genre-selection');
   
   if (this.value === 'ai') {
-      aiContainer.style.display = 'block';
-      genreContainer.style.display = 'none';
+    aiContainer.style.display = 'block';
+    genreContainer.style.display = 'none';
+    // Clear any selected genres when AI is selected
+    document.querySelectorAll('.genre-checkbox').forEach(checkbox => {
+      checkbox.checked = false;
+    });
   } else {
-      aiContainer.style.display = 'none';
-      genreContainer.style.display = 'block';
-      // Only load genres if not already loaded
-      if (document.querySelectorAll('.genre-option').length === 0) {
-          loadGenreOptions();
-      }
+    aiContainer.style.display = 'none';
+    genreContainer.style.display = 'block';
+    
+    // Load genres if not already loaded
+    if (document.querySelectorAll('.genre-option').length === 0) {
+      loadGenreOptions().then(() => {
+        selectDefaultGenres(this.value);
+      });
+    } else {
+      selectDefaultGenres(this.value);
+    }
   }
   
   // Clear AI prompt when switching away from AI
   if (this.value !== 'ai') {
-      document.getElementById('ai-prompt').value = '';
+    document.getElementById('ai-prompt').value = '';
   }
 });
+function selectDefaultGenres(playlistType) {
+  // First uncheck all genres
+  document.querySelectorAll('.genre-checkbox').forEach(checkbox => {
+    checkbox.checked = false;
+  });
+  
+  // Then check the default genres for this playlist type
+  const defaultGenres = PLAYLIST_TYPES[playlistType]?.genreOrder || [];
+  defaultGenres.forEach(genre => {
+    const checkbox = document.getElementById(`genre-${genre}`);
+    if (checkbox) {
+      checkbox.checked = true;
+    }
+  });
+}
+
 
 document.addEventListener('DOMContentLoaded', function() {
     // Theme toggle functionality
@@ -218,7 +254,31 @@ document.getElementById('logout-button').addEventListener('click', logout);
 
   // Add event listener for AI prompt checkbox
 });
-
+function simplifyGenre(genre) {
+  // Convert complex genre names to simpler ones that match our GENRES array
+  const simpleGenres = {
+    'acoustic': 'acoustic',
+    'instrumental': 'instrumental',
+    'rock': 'rock',
+    'rap': 'rap',
+    'hip hop': 'rap',
+    'jazz': 'jazz',
+    'pop': 'pop'
+  };
+  
+  // Check if the genre is already in our simple list
+  if (GENRES.includes(genre)) return genre;
+  
+  // Otherwise look for partial matches
+  for (const [complex, simple] of Object.entries(simpleGenres)) {
+    if (genre.includes(complex)) {
+      return simple;
+    }
+  }
+  
+  // Default to the first part of the genre name if we can't match it
+  return genre.split(/[-,\s]/)[0].toLowerCase();
+}
 function setupNavigation() {
   document.querySelectorAll('.nav-link').forEach(link => {
     link.addEventListener('click', (e) => {
