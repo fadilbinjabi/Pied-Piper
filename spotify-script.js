@@ -1668,7 +1668,7 @@ function logout() {
   refreshToken = null;
   
   // Redirect to the login page (which will be the same page)
-  window.location.href = 'https://fadilbinjabi.github.io/Pied-Piper/intro.html';
+  window.location.href = 'https://fadilbinjabi.github.io/Pied-Piper/index.html';
 }
 
 function updateTrackNumbers() {
