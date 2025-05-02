@@ -554,6 +554,26 @@ function updateStatsUI(data) {
 }
 
 function viewFullList(type, list) {
+  // Store the full list in a global variable
+  window.currentFullList = {
+    type: type,
+    items: list,
+    currentPage: 1,
+    itemsPerPage: 10
+  };
+
+  renderFullListView();
+}
+
+function renderFullListView() {
+  const { type, items, currentPage, itemsPerPage } = window.currentFullList;
+  
+  // Calculate pagination
+  const totalPages = Math.ceil(items.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = Math.min(startIndex + itemsPerPage, items.length);
+  const paginatedItems = items.slice(startIndex, endIndex);
+
   document.querySelectorAll('.section').forEach(section => {
     section.classList.remove('active');
     section.style.display = 'none';
@@ -568,6 +588,17 @@ function viewFullList(type, list) {
 
   fullViewSection.className = 'section active';
   fullViewSection.style.display = 'block';
+  
+  // Determine title based on type
+  let title;
+  if (type === 'artists') {
+    title = 'Top Artists';
+  } else if (type === 'songs') {
+    title = 'Top Tracks';
+  } else {
+    title = 'Top Genres';
+  }
+
   fullViewSection.innerHTML = `
     <div class="full-view-nav">
       <button class="back-button" onclick="backToStats()">
@@ -576,7 +607,7 @@ function viewFullList(type, list) {
         </svg>
         Back to Stats
       </button>
-      <h2>Your Top ${type === 'artists' ? 'Artists' : type === 'songs' ? 'Tracks' : 'Genres'}</h2>
+      <h2>Your ${title}</h2>
       <div class="time-range-selector">
         <button class="time-range-btn ${currentTimeRange === 'long_term' ? 'active' : ''}" data-range="long_term">All Time</button>
         <button class="time-range-btn ${currentTimeRange === 'medium_term' ? 'active' : ''}" data-range="medium_term">Last 6 Months</button>
@@ -589,12 +620,73 @@ function viewFullList(type, list) {
       </div>
       <div class="full-view-list-container">
         <ul class="full-view-list"></ul>
+        <div class="pagination-controls">
+          <button class="pagination-btn" id="prev-page" ${currentPage === 1 ? 'disabled' : ''}>Previous</button>
+          ${[...Array(totalPages)].map((_, i) => `
+            <button class="pagination-number ${i + 1 === currentPage ? 'active' : ''}" data-page="${i + 1}">
+              ${i + 1}
+            </button>
+          `).join('')}
+          <button class="pagination-btn" id="next-page" ${currentPage === totalPages ? 'disabled' : ''}>Next</button>
+        </div>
       </div>
     </div>
   `;
+// Automatically render chart when view is loaded
+if (type === 'artists') {
+  renderFullViewChart(
+    `${type}-full-chart`,
+    'bar',
+    paginatedItems.slice(0, 15).map(a => a.name),
+    paginatedItems.slice(0, 15).map(a => a.popularity),
+    'Artist Popularity'
+  );
+} else if (type === 'songs') {
+  renderFullViewChart(
+    `${type}-full-chart`,
+    'bar',
+    paginatedItems.slice(0, 15).map(t => t.name.substring(0, 15) + (t.name.length > 15 ? '...' : '')),
+    paginatedItems.slice(0, 15).map(t => Math.floor(t.duration_ms / 1000)),
+    'Track Duration (seconds)'
+  );
+} else if (type === 'genres') {
+  renderFullViewChart(
+    `${type}-full-chart`,
+    'pie',
+    paginatedItems.slice(0, 15).map(g => g[0]),
+    paginatedItems.slice(0, 15).map(g => g[1]),
+    'Genre Distribution'
+  );
+}
 
-  updateFullListView(type, list);
+  // Update the list view
+  updateFullListView(type, paginatedItems);
   
+  // Add event listeners for pagination
+  document.getElementById('prev-page').addEventListener('click', () => {
+    if (window.currentFullList.currentPage > 1) {
+      window.currentFullList.currentPage--;
+      renderFullListView();
+    }
+  });
+
+  document.getElementById('next-page').addEventListener('click', () => {
+    const totalPages = Math.ceil(window.currentFullList.items.length / window.currentFullList.itemsPerPage);
+    if (window.currentFullList.currentPage < totalPages) {
+      window.currentFullList.currentPage++;
+      renderFullListView();
+    }
+  });
+  document.querySelectorAll('.pagination-number').forEach(button => {
+    button.addEventListener('click', () => {
+      const newPage = parseInt(button.getAttribute('data-page'), 10);
+      window.currentFullList.currentPage = newPage;
+      renderFullListView();
+    });
+  });
+  
+
+  // Add time range button listeners
   document.querySelectorAll('#full-view-section .time-range-btn').forEach(button => {
     button.addEventListener('click', function() {
       document.querySelectorAll('#full-view-section .time-range-btn').forEach(btn => {
@@ -605,7 +697,9 @@ function viewFullList(type, list) {
       
       loadTopData().then(() => {
         const updatedList = window[`full${type.charAt(0).toUpperCase() + type.slice(1)}List`];
-        updateFullListView(type, updatedList);
+        window.currentFullList.items = updatedList;
+        window.currentFullList.currentPage = 1;
+        renderFullListView();
         
         if (type === 'artists') {
           renderFullViewChart(
@@ -647,13 +741,13 @@ function viewFullList(type, list) {
   }
 }
 
-function updateFullListView(type, list) {
+function updateFullListView(type, items) {
   try {
     const itemsList = document.querySelector('#full-view-section .full-view-list');
     if (!itemsList) throw new Error('List container not found');
 
     if (type === 'artists') {
-      itemsList.innerHTML = list.map(artist => `
+      itemsList.innerHTML = items.map(artist => `
         <li>
           <img src="${artist.images?.[0]?.url || 'default.jpg'}" alt="${artist.name}" />
           <div class="item-info">
@@ -664,13 +758,17 @@ function updateFullListView(type, list) {
         </li>
       `).join('');
     } else if (type === 'songs') {
-      itemsList.innerHTML = list.map((track, index) => `
+      itemsList.innerHTML = items.map((track, index) => {
+        // Calculate the global index based on current page
+        const globalIndex = (window.currentFullList.currentPage - 1) * window.currentFullList.itemsPerPage + index + 1;
+        
+        return `
         <li>
-          <span class="item-rank">${index + 1}</span>
-          <img src="${track.album.images?.[0]?.url || 'default.jpg'}" alt="${track.name}" />
+          <span class="item-rank">${globalIndex}</span>
+          <img src="${track.album?.images?.[0]?.url || 'default.jpg'}" alt="${track.name}" />
           <div class="item-info">
             <span class="item-name">${track.name}</span>
-            <span class="item-detail">${track.artists.map(a => a.name).join(', ')}</span>
+            <span class="item-detail">${track.artists?.map(a => a.name).join(', ') || 'Unknown Artist'}</span>
             <span class="item-detail">${formatDuration(track.duration_ms)}</span>
           </div>
           <div class="track-actions">
@@ -680,27 +778,30 @@ function updateFullListView(type, list) {
                   <path d="M8 5v14l11-7z"/>
                 </svg>
               </button>` : ''}
-            <a href="${track.external_urls.spotify}" target="_blank" class="spotify-link-button">
+            <a href="${track.external_urls?.spotify || '#'}" target="_blank" class="spotify-link-button">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="#1DB954">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
               </svg>
             </a>
           </div>
         </li>
-      `).join('');
+      `}).join('');
     } else if (type === 'genres') {
-      itemsList.innerHTML = list.map(([genre, count], index) => `
+      itemsList.innerHTML = items.map(([genre, count], index) => {
+        const globalIndex = (window.currentFullList.currentPage - 1) * window.currentFullList.itemsPerPage + index + 1;
+        
+        return `
         <li>
-          <span class="item-rank">${index + 1}</span>
+          <span class="item-rank">${globalIndex}</span>
           <div class="item-info">
             <span class="item-name">${genre}</span>
             <div class="genre-bar-container">
-              <div class="genre-bar" style="width: ${(count / list[0][1]) * 100}%"></div>
+              <div class="genre-bar" style="width: ${(count / window.currentFullList.items[0][1]) * 100}%"></div>
               <span class="item-count">${count} artists</span>
             </div>
           </div>
         </li>
-      `).join('');
+      `}).join('');
     }
   } catch (error) {
     console.error('Error updating full list view:', error);
@@ -710,7 +811,6 @@ function updateFullListView(type, list) {
     document.querySelector('#full-view-section .full-view-content').prepend(errorDiv);
   }
 }
-
 function renderFullViewChart(elementId, chartType, labels, data, title) {
   setTimeout(() => {
     const canvas = document.getElementById(elementId);
@@ -1501,12 +1601,19 @@ function playAudioPreview(url) {
   currentAudio.play().catch(e => console.error('Audio playback failed:', e));
 }
 
-function openModal(content) {
+function openModal(content, modalType = '') {
   const modal = document.getElementById('modal');
   const modalContent = document.getElementById('modal-content');
   
   modalContent.innerHTML = content;
   modal.style.display = 'flex';
+  
+  // Add modal type class if provided
+  if (modalType) {
+    modalContent.className = `modal-content ${modalType}`;
+  } else {
+    modalContent.className = 'modal-content';
+  }
   
   modal.setAttribute('aria-modal', 'true');
   modal.setAttribute('role', 'dialog');
@@ -1577,7 +1684,8 @@ function displaySearchResults(tracks) {
               data-track-name="${track.name}"
               data-track-artist="${track.artists.map(a => a.name).join(', ')}"
               data-track-uri="${track.uri}"
-              data-track-image="${track.album.images[0]?.url || ''}">
+              data-track-image="${track.album.images[0]?.url || ''}"
+              data-track-preview="${track.preview_url || ''}">
         Add to Playlist
       </button>
     </div>
@@ -1585,11 +1693,11 @@ function displaySearchResults(tracks) {
 
   // Add event listeners to the add buttons
   document.querySelectorAll('.add-song-button').forEach(button => {
-    button.addEventListener('click', function() {
+    button.addEventListener('click', async function() {
       const track = {
         id: this.getAttribute('data-track-id'),
         name: this.getAttribute('data-track-name'),
-        artists: [{ name: this.getAttribute('data-track-artist') }],
+        artists: this.getAttribute('data-track-artist').split(', ').map(name => ({ name })),
         uri: this.getAttribute('data-track-uri'),
         album: {
           images: this.getAttribute('data-track-image') ? 
@@ -1598,14 +1706,141 @@ function displaySearchResults(tracks) {
         external_urls: {
           spotify: `https://open.spotify.com/track/${this.getAttribute('data-track-id')}`
         },
-        preview_url: track.preview_url || ''
+        preview_url: this.getAttribute('data-track-preview') || null
       };
       
-      addTrackToMoodPlaylist(track);
+      // Show playlist selection modal instead of adding directly
+      await showPlaylistSelectionModal(track);
     });
   });
 }
-
+async function showPlaylistSelectionModal(track) {
+  try {
+    // Fetch user playlists
+    const response = await makeRequest('https://api.spotify.com/v1/me/playlists?limit=50');
+    const playlists = await response.json();
+    
+    // Filter out empty or invalid playlists
+    const validPlaylists = playlists.items.filter(playlist => 
+      playlist && playlist.id && playlist.name
+    );
+    
+    // Create modal content
+    const modalContent = `
+    <div class="playlist-select-modal">
+      <div class="search-container">
+        <img src="${track.album.images?.[0]?.url || 'default.jpg'}" 
+             alt="${track.name}" class="track-thumbnail" />
+        <div class="track-info">
+          <h4>${track.name}</h4>
+          <p>${track.artists.map(a => a.name).join(', ')}</p>
+        </div>
+        <input type="text" placeholder="Search playlists..." class="playlist-search" />
+      </div>
+      <div class="playlist-selection-container">
+        <ul class="playlist-selection-list">
+          ${validPlaylists.map(playlist => `
+            <li class="playlist-selection-item" data-playlist-id="${playlist.id}">
+              <img src="${playlist.images?.[0]?.url || 'default.jpg'}" 
+                   alt="${playlist.name}" 
+                   class="playlist-cover" />
+              <div class="playlist-info">
+                <span class="playlist-name">${playlist.name}</span>
+                <span class="playlist-meta">${playlist.tracks.total} songs • ${playlist.owner.display_name}</span>
+              </div>
+              <button class="add-button">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 4v16m8-8H4" stroke="currentColor" stroke-width="2"/>
+                </svg>
+              </button>
+            </li>
+          `).join('')}
+        </ul>
+      </div>
+    </div>
+  `;
+    
+    // Open the modal
+    openModal(modalContent, 'playlist-select-modal');
+    
+    // Add search functionality
+    const searchInput = document.querySelector('.playlist-search');
+    searchInput.addEventListener('input', (e) => {
+      const searchTerm = e.target.value.toLowerCase();
+      document.querySelectorAll('.playlist-selection-item').forEach(item => {
+        const playlistName = item.querySelector('.playlist-name').textContent.toLowerCase();
+        item.style.display = playlistName.includes(searchTerm) ? 'flex' : 'none';
+      });
+    });
+    
+    // Add click handlers
+    document.querySelectorAll('.playlist-selection-item').forEach(item => {
+      const addButton = item.querySelector('.add-button');
+      
+      addButton.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const playlistId = item.getAttribute('data-playlist-id');
+        const playlistName = item.querySelector('.playlist-name').textContent;
+        
+        item.classList.add('adding');
+        addButton.innerHTML = '<div class="loading-spinner"></div>';
+        
+        try {
+          await addTrackToSpecificPlaylist(playlistId, track.uri);
+          showSuccessMessage(`Added to ${playlistName}`);
+          closeModal();
+        } catch (error) {
+          item.classList.remove('adding');
+          addButton.innerHTML = `
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M12 4v16m8-8H4" stroke="currentColor" stroke-width="2"/>
+            </svg>
+          `;
+          showError(`Failed to add to ${playlistName}`);
+        }
+      });
+      
+      // Whole item is clickable
+      item.addEventListener('click', () => {
+        addButton.click();
+      });
+    });
+    
+    // Close button
+    document.querySelector('.playlist-select-modal .close-button').addEventListener('click', closeModal);
+    
+  } catch (error) {
+    console.error('Error showing playlist selection:', error);
+    showError('Failed to load playlists');
+  }
+}
+async function addTrackToSpecificPlaylist(playlistId, trackUri) {
+  try {
+    const response = await makeRequest(
+      `https://api.spotify.com/v1/playlists/${playlistId}/tracks`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          uris: [trackUri],
+          position: 0
+        })
+      }
+    );
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error?.message || 'Failed to add track');
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error adding track to playlist:', error);
+    throw error;
+  }
+}
 function addTrackToMoodPlaylist(track) {
   const playlistContainer = document.getElementById('mood-playlist');
   
@@ -1656,6 +1891,15 @@ function addTrackToMoodPlaylist(track) {
     trackElement.remove();
     updateTrackNumbers();
   });
+
+  // Add event listener to the play button if it exists
+  const playButton = trackElement.querySelector('.play-button');
+  if (playButton) {
+    playButton.addEventListener('click', function() {
+      const audioUrl = this.getAttribute('data-song-url');
+      playAudioPreview(audioUrl);
+    });
+  }
 }
 function logout() {
   // Clear all stored tokens
