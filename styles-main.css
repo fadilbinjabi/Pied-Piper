@@ -19,40 +19,7 @@ body {
   flex-direction: column;
   min-height: 100vh;
 }
-/* Add this to your existing light mode scrollbar styles */
-body.light-mode .playlist-selection-container::-webkit-scrollbar-track {
-  background: #f7fafc;
-}
 
-body.light-mode .playlist-selection-container::-webkit-scrollbar-thumb {
-  background: #cbd5e0;
-}
-
-body.light-mode .playlist-selection-container::-webkit-scrollbar-thumb:hover {
-  background: #1DB954;
-}
-
-/* Also ensure the search results container has proper scrollbar styling */
-body.light-mode .search-results-container::-webkit-scrollbar-track {
-  background: #f7fafc;
-}
-
-body.light-mode .search-results-container::-webkit-scrollbar-thumb {
-  background: #cbd5e0;
-}
-
-body.light-mode .search-results-container::-webkit-scrollbar-thumb:hover {
-  background: #1DB954;
-}
-
-/* Add these for Firefox compatibility */
-body.light-mode .playlist-selection-container {
-  scrollbar-color: #cbd5e0 #f7fafc;
-}
-
-body.light-mode .search-results-container {
-  scrollbar-color: #cbd5e0 #f7fafc;
-}
 /* ===== Scrollbar Styles ===== */
 ::-webkit-scrollbar {
   width: 8px;
@@ -214,16 +181,6 @@ body.light-mode .search-results-container {
 .moon-icon {
   display: block;
   fill: #b3b3b3;
-}
-
-/* Light mode styles - hide moon, show sun */
-body.light-mode .sun-icon {
-  display: block;
-  fill: #4a5568;
-}
-
-body.light-mode .moon-icon {
-  display: none;
 }
 
 /* ===== Main Layout ===== */
@@ -604,7 +561,6 @@ input:checked + .slider:before {
   background: #383838;
 }
 
-
 .search-result img {
   width: 50px;
   height: 50px;
@@ -620,13 +576,13 @@ input:checked + .slider:before {
   justify-content: center;
   overflow: hidden;
 }
+
 .search-result-name,
 .search-result-artist {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
 
 .search-result-name {
   font-weight: 600;
@@ -710,7 +666,7 @@ input:checked + .slider:before {
 .track-info {
   flex: 1;
   min-width: 0;
-  overflow: hidden
+  overflow: hidden;
 }
 
 .track-name {
@@ -918,6 +874,7 @@ button.loading::after {
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
+
 .stats-card {
   background: #181818;
   padding: 20px;
@@ -1575,78 +1532,75 @@ button.loading::after {
 }
 
 /* ===== Enhanced Light Mode Colors ===== */
-body.light-mode .modal-container {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-}
-
-body.light-mode .modal-header {
-  background: #f7fafc;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-body.light-mode .modal-header h3 {
-  color: #2d3748;
-}
-
-body.light-mode .modal-playlist-container {
-  background: #ffffff;
-}
-
-body.light-mode .generated-playlist-tracks .track-name {
-  color: #2d3748;
-}
-
-body.light-mode .generated-playlist-tracks .track-artist {
-  color: #718096;
+body.light-mode {
+    --primary-color: #3D8D7A;
+  --primary-light: #1ED760;
+  --primary-dark: #179e47;
+  --text-primary: #2d3748;
+  --text-secondary: #4a5568;
+  --text-tertiary: #718096;
+  --bg-primary: #B3D8A8;
+  --bg-secondary: #A3D1C6;
+  --bg-tertiary: #8bc763;
+  --border-light: #e2e8f0;
+  --border-medium: #cbd5e0;
+  --accent-blue: #4299e1;
+  --accent-purple: #9f7aea;
+  --accent-red: #f56565;
+  --accent-green: #48bb78;
+  --accent-yellow: #ecc94b;
+  --accent-orange: #ed8936;
 }
 
 body.light-mode {
-  background: linear-gradient(180deg, #f5f7fa 0%, #e6e9f0 100%);
-  color: #2d3748;
+  background:  #A3D1C6 ;
+  color: var(--text-primary);
 }
 
-body.light-mode .header,
+body.light-mode .header {
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-light);
+}
 body.light-mode .navigation-container {
-  background: #ffffff;
-  border-bottom: 1px solid #e2e8f0;
+  background: white;
+  border-bottom: 1px solid var(--border-light);
 }
 
 body.light-mode .sidebar {
-  background: #f7fafc;
-  border-right: 1px solid #e2e8f0;
+  background: var(--bg-primary);
+  border-right: 1px solid var(--border-light);
 }
 
 body.light-mode .sidebar li {
-  background: #edf2f7;
-  border: 1px solid #e2e8f0;
-  color: #4a5568;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  color: var(--text-secondary);
 }
 
 body.light-mode .sidebar li:hover {
-  background: #1DB954;
+  background: var(--primary-color);
   color: white;
 }
 
 body.light-mode .stats-card,
 body.light-mode #mood-playlist-container,
 body.light-mode .search-section {
-  background: #ffffff;
+  background: var(--bg-primary);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-light);
 }
 
 body.light-mode .nav-link {
-  color: #4a5568;
+  color: var(--text-secondary);
 }
 
 body.light-mode .nav-link:hover {
-  color: #2d3748;
+  color: var(--text-primary);
   background: rgba(74, 85, 104, 0.05);
 }
 
 body.light-mode .nav-link.active {
-  color: #1DB954;
+  color: var(--primary-color);
   background: rgba(29, 185, 84, 0.1);
 }
 
@@ -1654,141 +1608,141 @@ body.light-mode .top-list li,
 body.light-mode .track-item,
 body.light-mode .stat-item,
 body.light-mode .search-result {
-  background: #f7fafc;
-  border: 1px solid #e2e8f0;
-  color: #4a5568;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  color: var(--text-secondary);
 }
 
 body.light-mode .track-artist,
 body.light-mode .artist-popularity,
 body.light-mode .stat-label,
 body.light-mode .search-result-artist {
-  color: #718096;
+  color: var(--text-tertiary);
 }
 
 body.light-mode .modal-container {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-light);
 }
 
 body.light-mode .modal-header {
-  background: #f7fafc;
-  border-bottom: 1px solid #e2e8f0;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-light);
 }
 
 body.light-mode .modal-playlist-container {
-  border-right: 1px solid #e2e8f0;
+  border-right: 1px solid var(--border-light);
 }
 
 body.light-mode .search-result-item {
-  background: #edf2f7;
-  border: 1px solid #e2e8f0;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-light);
 }
 
 body.light-mode .search-result-item:hover {
-  background: #e2e8f0;
+  background: var(--border-light);
 }
 
 body.light-mode #search-tracks {
-  background: #ffffff;
-  border: 1px solid #cbd5e0;
-  color: #4a5568;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-medium);
+  color: var(--text-secondary);
 }
 
 body.light-mode .add-tracks-section {
-  background: #f7fafc;
-  border-top: 1px solid #e2e8f0;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-light);
 }
 
 /* Enhanced Input Fields */
 body.light-mode input,
 body.light-mode textarea,
 body.light-mode select {
-  background: #ffffff !important;
-  border: 1px solid #cbd5e0 !important;
-  color: #4a5568 !important;
+  background:white !important;
+  border: 1px solid var(--border-medium) !important;
+  color: var(--text-secondary) !important;
 }
 
 body.light-mode input:focus,
 body.light-mode textarea:focus,
 body.light-mode select:focus {
-  border-color: #1DB954 !important;
+  border-color: var(--primary-color) !important;
   box-shadow: 0 0 0 3px rgba(29, 185, 84, 0.2) !important;
 }
 
 body.light-mode #playlist-type,
 body.light-mode #ai-prompt {
-  background: #ffffff !important;
-  border: 1px solid #cbd5e0 !important;
-  color: #4a5568 !important;
+  background: white !important;
+  border: 1px solid var(--border-medium) !important;
+  color: var(--text-secondary) !important;
 }
 
 /* Vibrant Buttons */
 body.light-mode .time-range-btn {
-  background: #edf2f7;
-  color: #4a5568;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
 }
 
 body.light-mode .time-range-btn.active {
-  background: #1DB954;
+  background: var(--primary-color);
   color: white;
 }
 
 body.light-mode .time-range-btn:hover:not(.active) {
-  background: #e2e8f0;
+  background: var(--border-light);
 }
 
 /* Colorful Stats Cards */
 body.light-mode .stats-card:nth-child(1) {
-  border-top: 3px solid #4299e1; /* Blue */
+  border-top: 3px solid var(--accent-blue);
 }
 
 body.light-mode .stats-card:nth-child(2) {
-  border-top: 3px solid #9f7aea; /* Purple */
+  border-top: 3px solid var(--accent-purple);
 }
 
 body.light-mode .stats-card:nth-child(3) {
-  border-top: 3px solid #f56565; /* Red */
+  border-top: 3px solid var(--accent-red);
 }
 
 body.light-mode .stats-card:nth-child(4) {
-  border-top: 3px solid #48bb78; /* Green */
+  border-top: 3px solid var(--accent-green);
 }
 
 /* Enhanced Genre Bars */
 body.light-mode .genre-bar-container {
-  background: #e2e8f0;
+  background: var(--border-light);
 }
 
 body.light-mode .genre-bar {
-  background: linear-gradient(90deg, #1DB954, #48bb78);
+  background: linear-gradient(90deg, var(--primary-color), var(--accent-green));
 }
 
 /* Colorful Chart Elements */
 body.light-mode .chart-legend li:nth-child(1)::before {
-  background-color: #4299e1; /* Blue */
+  background-color: var(--accent-blue);
 }
 
 body.light-mode .chart-legend li:nth-child(2)::before {
-  background-color: #9f7aea; /* Purple */
+  background-color: var(--accent-purple);
 }
 
 body.light-mode .chart-legend li:nth-child(3)::before {
-  background-color: #f56565; /* Red */
+  background-color: var(--accent-red);
 }
 
 /* Enhanced Track Items */
 body.light-mode .track-item:nth-child(odd) {
-  background: #f7fafc;
+  background: var(--bg-secondary);
 }
 
 body.light-mode .track-item:nth-child(even) {
-  background: #edf2f7;
+  background: var(--bg-tertiary);
 }
 
 /* Vibrant Play Buttons */
 body.light-mode .play-button {
-  border-color: #1DB954;
+  border-color: var(--primary-color);
   background: rgba(29, 185, 84, 0.1);
 }
 
@@ -1814,15 +1768,15 @@ body.light-mode .info-message {
 
 /* Enhanced Scrollbar */
 body.light-mode::-webkit-scrollbar-track {
-  background: #edf2f7;
+  background: rgb(0, 0, 0);
 }
 
 body.light-mode::-webkit-scrollbar-thumb {
-  background: #cbd5e0;
+  background: var(--border-medium);
 }
 
 body.light-mode::-webkit-scrollbar-thumb:hover {
-  background: #1DB954;
+  background: var(--primary-color);
 }
 
 /* Colorful User Interface Elements */
@@ -1835,42 +1789,42 @@ body.light-mode .theme-toggle:hover {
 }
 
 body.light-mode .sun-icon {
-  fill: #4a5568;
+  fill: var(--text-secondary);
 }
 
 /* Enhanced Loading Indicators */
 body.light-mode #generate-playlist-button.loading::after {
   border: 3px solid rgba(74, 85, 104, 0.1);
-  border-top-color: #4a5568;
+  border-top-color: var(--text-secondary);
 }
 
 /* Colorful Section Headers */
 body.light-mode h2, 
 body.light-mode h3 {
-  color: #2d3748;
+  color: var(--text-primary);
 }
 
 body.light-mode h2 {
-  border-bottom: 2px solid #1DB954;
+  border-bottom: 2px solid var(--primary-color);
   padding-bottom: 8px;
 }
 
 /* Enhanced Form Elements */
 body.light-mode .switch {
-  background: #cbd5e0;
+  background: var(--border-medium);
 }
 
 body.light-mode input:checked + .slider {
-  background: #1DB954;
+  background: var(--primary-color);
 }
 
 /* Colorful Stats Values */
 body.light-mode .stat-value {
-  color: #1a365d;
+  color: var(--text-primary);
 }
 
 body.light-mode .item-detail {
-  color: #718096;
+  color: var(--text-tertiary);
 }
 
 /* Enhanced Card Shadows */
@@ -1880,7 +1834,7 @@ body.light-mode .stats-card {
 
 /* Colorful Track Numbers */
 body.light-mode .track-number {
-  color: #1DB954;
+  color: var(--primary-color);
   background: rgba(29, 185, 84, 0.1);
   border-radius: 50%;
   width: 26px;
@@ -1898,59 +1852,59 @@ body.light-mode .search-result:hover {
 
 /* Colorful Action Buttons */
 body.light-mode .add-song-button {
-  background: #1DB954;
+  background: var(--primary-color);
   color: white;
 }
 
 body.light-mode .add-song-button:hover {
-  background: #48bb78;
+  background: var(--accent-green);
 }
 
 body.light-mode .remove-button svg {
-  fill: #f56565;
+  fill: var(--accent-red);
 }
 
 /* Enhanced Time Range Selector */
 body.light-mode .time-range-selector {
-  background: #edf2f7;
+  background: var(--bg-tertiary);
   border-radius: 20px;
   padding: 4px;
 }
 
 /* Add to the light mode section */
 body.light-mode .playlist-actions {
-  background: #f7fafc;
-  border-bottom: 1px solid #e2e8f0;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-light);
 }
 
 body.light-mode .save-button {
-  background: #1DB954;
+  background: var(--primary-color);
   color: white;
 }
 
 body.light-mode .cancel-button {
-  color: #4a5568;
-  border-color: #cbd5e0;
+  color: var(--text-secondary);
+  border-color: var(--border-medium);
 }
 
 body.light-mode .cancel-button:hover {
-  color: #2d3748;
-  border-color: #a0aec0;
+  color: var(--text-primary);
+  border-color: var(--text-tertiary);
 }
 
 /* Full view section light mode styles */
 body.light-mode #full-view-section {
-  background: #f7fafc;
+  background: var(--bg-secondary);
 }
 
 body.light-mode .full-view-nav {
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--border-light);
 }
 
 body.light-mode .full-view-list li {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  color: #4a5568;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  color: var(--text-secondary);
 }
 
 body.light-mode .full-view-list li:hover {
@@ -1958,15 +1912,15 @@ body.light-mode .full-view-list li:hover {
 }
 
 body.light-mode .item-name {
-  color: #2d3748;
+  color: var(--text-primary);
 }
 
 body.light-mode .item-detail {
-  color: #718096;
+  color: var(--text-tertiary);
 }
 
 body.light-mode .item-rank {
-  color: #1DB954;
+  color: var(--primary-color);
   background: rgba(29, 185, 84, 0.1);
   border-radius: 50%;
   width: 26px;
@@ -1977,25 +1931,25 @@ body.light-mode .item-rank {
 }
 
 body.light-mode .genre-bar-container {
-  background: #e2e8f0;
+  background: var(--border-light);
 }
 
 body.light-mode .genre-bar {
-  background: linear-gradient(90deg, #1DB954, #48bb78);
+  background: linear-gradient(90deg, var(--primary-color), var(--accent-green));
 }
 
 /* Back button in light mode */
 body.light-mode .back-button {
-  background: #edf2f7;
-  color: #4a5568;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
 }
 
 body.light-mode .back-button:hover {
-  background: #e2e8f0;
+  background: var(--border-light);
 }
 
 body.light-mode .back-button svg {
-  fill: #4a5568;
+  fill: var(--text-secondary);
 }
 
 .genre-selection {
@@ -2045,7 +1999,7 @@ body.light-mode .logout-button:hover {
 }
 
 body.light-mode .logout-button svg {
-  stroke: #4a5568;
+  stroke: var(--text-secondary);
 }
 
 body.light-mode .logout-button:hover svg {
@@ -2061,20 +2015,20 @@ body.light-mode .logout-button:hover svg {
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 14px;
-  color: #b3b3b3; /* Default text color */
+  color: #b3b3b3;
 }
 
 /* Light mode specific styles */
 body.light-mode .genre-label {
-  background: #e2e8f0;
-  color: #4a5568; /* Better contrast for light mode */
-  border: 1px solid #cbd5e0;
+  background: white;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-light);
 }
 
 body.light-mode .genre-checkbox:checked + .genre-label {
-  background: #1DB954;
+  background: var(--primary-color);
   color: white;
-  border-color: #1DB954;
+  border-color: var(--primary-color);
 }
 
 /* Hover states */
@@ -2084,8 +2038,8 @@ body.light-mode .genre-checkbox:checked + .genre-label {
 }
 
 body.light-mode .genre-label:hover {
-  background: #cbd5e0;
-  color: #2d3748;
+  background: var(--border-light);
+  color: var(--text-primary);
 }
 
 .genre-options {
@@ -2133,6 +2087,7 @@ body.light-mode .genre-label:hover {
   background: #1DB954;
   color: white;
 }
+
 /* ===== Pagination Styles ===== */
 .pagination-controls {
   display: flex;
@@ -2175,24 +2130,24 @@ body.light-mode .genre-label:hover {
 /* Light mode overrides */
 body.light-mode .pagination-number,
 body.light-mode .pagination-btn {
-  background: #e0e0e0;
-  color: #333;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
 }
 
 body.light-mode .pagination-number:hover,
 body.light-mode .pagination-btn:hover:not(:disabled) {
-  background: #1DB954;
+  background: var(--primary-color);
   color: white;
 }
 
 body.light-mode .pagination-number.active {
-  background: #1DB954;
+  background: var(--primary-color);
   color: white;
 }
 
 body.light-mode .pagination-btn:disabled {
-  background: #ccc;
-  color: #888;
+  background: var(--border-light);
+  color: var(--text-tertiary);
 }
 
 /* ===== Pagination Controls ===== */
@@ -2240,17 +2195,18 @@ body.light-mode .pagination-btn:disabled {
 
 /* Light mode styles */
 body.light-mode .pagination-btn {
-  background: #e2e8f0;
-  color: #4a5568;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
 }
 
 body.light-mode .pagination-btn:hover:not(:disabled) {
-  background: #cbd5e0;
+  background: var(--border-light);
 }
 
 body.light-mode .page-info {
-  color: #718096;
+  color: var(--text-tertiary);
 }
+
 /* ===== Playlist Selection Modal ===== */
 .playlist-select-modal {
   width: 100%;
@@ -2435,56 +2391,58 @@ body.light-mode .page-info {
 }
 
 /* Light Mode Styles */
-
 body.light-mode .search-container {
-  background: #f7fafc;
-  border-bottom: 1px solid #e2e8f0;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-light);
 }
 
 body.light-mode .search-container .track-info h4 {
-  color: #2d3748;
+  color: var(--text-primary);
 }
 
 body.light-mode .search-container .track-info p {
-  color: #718096;
+  color: var(--text-tertiary);
 }
 
 body.light-mode .playlist-search {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  color: #2d3748;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  color: var(--text-secondary);
 }
 body.light-mode .playlist-select-modal {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-light);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
 }
 
 body.light-mode .playlist-select-modal .modal-header {
-  background: #f7fafc;
-  border-bottom: 1px solid #e2e8f0;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-light);
 }
 
 body.light-mode .track-info-header h3,
 body.light-mode .track-info-header h4,
 body.light-mode .playlist-name {
-  color: #2d3748;
+  color: var(--text-primary);
+}
+body.light-mode .setting-group label {
+  color: black !important;
 }
 
 body.light-mode .track-info-header p,
 body.light-mode .playlist-meta {
-  color: #718096;
+  color: var(--text-tertiary);
 }
 
 body.light-mode .playlist-search {
-  background: #f7fafc;
-  border: 1px solid #e2e8f0;
-  color: #2d3748;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  color: var(--text-primary);
 }
 
 body.light-mode .playlist-selection-item {
-  background: #f7fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
 }
 
 body.light-mode .playlist-selection-item:hover {
@@ -2496,11 +2454,11 @@ body.light-mode .playlist-selection-item.adding {
 }
 
 body.light-mode .add-button {
-  color: #718096;
+  color: var(--text-tertiary);
 }
 
 body.light-mode .playlist-selection-item:hover .add-button {
-  color: #1DB954;
+  color: var(--primary-color);
   background: rgba(0, 0, 0, 0.05);
 }
 
