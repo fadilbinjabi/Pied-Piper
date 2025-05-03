@@ -210,6 +210,9 @@ document.addEventListener('DOMContentLoaded', function() {
       document.body.classList.toggle('light-mode');
       const theme = document.body.classList.contains('light-mode') ? 'light' : 'dark';
       localStorage.setItem('theme', theme);
+      if (window.currentFullList) {
+        renderFullListView();
+      }
     });
   const firstSection = document.querySelector('.section');
   if (firstSection) {
@@ -832,18 +835,11 @@ function renderFullViewChart(elementId, chartType, labels, data, title) {
           label: title,
           data: data,
           backgroundColor: chartType === 'pie' ? 
-                     [
-                       '#4E79A7', // muted blue
-                       '#F28E2B', // orange
-                       '#E15759', // red
-                       '#76B7B2', // teal
-                       '#59A14F', // green
-                       '#EDC948', // yellow-gold
-                       '#B07AA1', // purple
-                       '#FF9DA7', // soft pink
-                       '#9C755F', // brownish
-                       '#BAB0AC'  // neutral gray
-                     ].sort(() => Math.random() - 0.5) : '#1DB954',
+            [
+              '#4E79A7', '#F28E2B', '#E15759', '#76B7B2', 
+              '#59A14F', '#EDC948', '#B07AA1', '#FF9DA7', 
+              '#9C755F', '#BAB0AC'
+            ].sort(() => Math.random() - 0.5) : '#1DB954',
           borderColor: '#1DB954',
           borderWidth: 1
         }]
@@ -854,6 +850,11 @@ function renderFullViewChart(elementId, chartType, labels, data, title) {
 }
 
 function getChartOptions(yAxisTitle) {
+  const isLightMode = document.body.classList.contains('light-mode');
+  const textColor = isLightMode ? '#2d3748' : '#b3b3b3';
+  const gridColor = isLightMode ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.1)';
+  const bgColor = isLightMode ? '#ffffff' : '#282828';
+
   return {
     responsive: true,
     maintainAspectRatio: false,
@@ -861,16 +862,16 @@ function getChartOptions(yAxisTitle) {
       legend: {
         position: 'top',
         labels: {
-          color: '#b3b3b3',
+          color: textColor,
           font: {
             size: 12
           }
         }
       },
       tooltip: {
-        backgroundColor: '#282828',
+        backgroundColor: isLightMode ? '#f7fafc' : '#282828',
         titleColor: '#1DB954',
-        bodyColor: '#ffffff',
+        bodyColor: isLightMode ? '#2d3748' : '#ffffff',
         borderColor: '#1DB954',
         borderWidth: 1,
         padding: 12,
@@ -885,20 +886,20 @@ function getChartOptions(yAxisTitle) {
       y: {
         beginAtZero: true,
         ticks: {
-          color: '#b3b3b3'
+          color: textColor
         },
         title: {
           display: !!yAxisTitle,
           text: yAxisTitle,
-          color: '#b3b3b3'
+          color: textColor
         },
         grid: {
-          color: 'rgba(255,255,255,0.1)'
+          color: gridColor
         }
       },
       x: {
         ticks: {
-          color: '#b3b3b3',
+          color: textColor,
           maxRotation: 45,
           minRotation: 45
         },
@@ -909,7 +910,6 @@ function getChartOptions(yAxisTitle) {
     }
   };
 }
-
 function backToStats() {
   const fullViewSection = document.getElementById('full-view-section');
   if (fullViewSection) {
