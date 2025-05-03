@@ -44,6 +44,31 @@ body {
   scrollbar-width: thin;
   scrollbar-color: #535353 #121212;
 }
+/* Light mode scrollbar overrides */
+body.light-mode ::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+body.light-mode ::-webkit-scrollbar-thumb {
+  background: var(--border-light);
+}
+
+body.light-mode ::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-color);
+}
+
+body.light-mode .scrollable {
+  scrollbar-color: var(--border-light) var(--bg-secondary);
+}
+
+/* Modal specific scrollbar styling */
+body.light-mode .modal-container::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+body.light-mode .modal-container::-webkit-scrollbar-thumb {
+  background: var(--border-medium);
+}
 
 /* ===== Header & Navigation ===== */
 .header {
