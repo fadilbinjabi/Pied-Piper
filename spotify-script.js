@@ -612,7 +612,7 @@ function renderFullListView() {
       </button>
       <h2>Your ${title}</h2>
       <div class="time-range-selector">
-        <button class="time-range-btn ${currentTimeRange === 'long_term' ? 'active' : ''}" data-range="long_term">All Time</button>
+        <button class="time-range-btn ${currentTimeRange === 'long_term' ? 'active' : ''}" data-range="long_term">Last 12 Months</button>
         <button class="time-range-btn ${currentTimeRange === 'medium_term' ? 'active' : ''}" data-range="medium_term">Last 6 Months</button>
         <button class="time-range-btn ${currentTimeRange === 'short_term' ? 'active' : ''}" data-range="short_term">Last 4 Weeks</button>
       </div>
@@ -1044,53 +1044,61 @@ async function getSeedTracks() {
 }
 async function getRecommendedTracks(seedTracks, genres, limit) {
   try {
-    if (seedTracks.length > 0) {
-      const response = await makeRequest(
-        `https://api.spotify.com/v1/recommendations?limit=${limit}&seed_tracks=${seedTracks.join(',')}`
-      );
-      const data = await response.json();
-      
-      if (data.tracks.length > 0) {
-        return data.tracks.filter(track => 
-          track.artists.some(artist => 
-            artist.genres?.some(genre => genres.includes(simplifyGenre(genre)))
-        ).slice(0, limit));
-      }
-    }
+    // First try Spotify's recommendation API
+    const response = await makeRequest(
+      `https://api.spotify.com/v1/recommendations?limit=${limit}&seed_tracks=${seedTracks.join(',')}`
+    );
+    const data = await response.json();
     
-    return await getTracksByGenres(genres, limit);
+    // Try to filter by genre first
+    const genreFilteredTracks = data.tracks.filter(track => 
+      track.artists.some(artist => 
+        artist.genres?.some(g => genres.includes(simplifyGenre(g)))
+    ).slice(0, limit));
+
+    // If we got enough genre-matched tracks, return them
+    if (genreFilteredTracks.length >= Math.min(5, limit)) {
+      return genreFilteredTracks;
+    }
+
+    // Otherwise fall back to ALL recommended tracks (no genre filter)
+    return data.tracks.slice(0, limit);
     
   } catch (error) {
     console.error('Error getting recommendations:', error);
-    return await getTracksByGenres(genres, limit);
+    return await getTracksByGenres(genres, limit); // Fallback to genre search
   }
 }
 async function getTracksByGenres(genres, limit) {
   const tracks = [];
-  let genreIndex = 0;
+  let attempts = 0;
+  const MAX_ATTEMPTS = 15; // Increased from 3
   
-  while (tracks.length < limit && genreIndex < genres.length * 3) {
-    const genre = genres[genreIndex % genres.length];
+  while (tracks.length < limit && attempts < MAX_ATTEMPTS) {
+    const genre = genres[attempts % genres.length];
     try {
       const response = await makeRequest(
-        `https://api.spotify.com/v1/search?q=genre:${encodeURIComponent(genre)}&type=track&limit=5`
+        `https://api.spotify.com/v1/search?q=genre:${encodeURIComponent(genre)}&type=track&limit=${Math.min(50, limit - tracks.length)}`
       );
       const data = await response.json();
       
+      // Add unique tracks
       data.tracks.items.forEach(track => {
-        if (tracks.length < limit && !tracks.some(t => t.id === track.id)) {
+        if (!tracks.some(t => t.id === track.id)) {
           tracks.push(track);
+          if (tracks.length >= limit) return;
         }
       });
+      
     } catch (error) {
-      console.error(`Error searching genre ${genre}:`, error);
+      console.error(`Error searching genre "${genre}":`, error);
     }
     
-    genreIndex++;
-    await new Promise(resolve => setTimeout(resolve, 300));
+    attempts++;
+    await new Promise(resolve => setTimeout(resolve, 350)); // Rate limit delay
   }
   
-  return tracks;
+  return tracks.slice(0, limit); // Ensure we don't exceed limit
 }
 async function fetchTopTracks(limit) {
   const response = await makeRequest(
@@ -1110,6 +1118,7 @@ async function generateSpecialPlaylist() {
   button.classList.add('loading');
   
   try {
+    // Get user inputs
     const playlistType = document.getElementById('playlist-type').value;
     const isAI = playlistType === 'ai';
     const playlistName = document.getElementById('playlist-name').value || 
@@ -1117,18 +1126,23 @@ async function generateSpecialPlaylist() {
     const trackCount = parseInt(document.getElementById('playlist-duration').value);
     const isPublic = document.getElementById('playlist-privacy').checked;
 
+    // Validate input
     if (trackCount < 1 || trackCount > 50) {
       throw new Error('Playlist must contain 1-50 songs');
     }
 
     let tracksToAdd = [];
     
+    // AI Playlist Generation
     if (isAI) {
       const aiPrompt = document.getElementById('ai-prompt').value.trim();
       if (!aiPrompt) throw new Error('Please describe your playlist idea');
       
       tracksToAdd = await generateAIPlaylist(aiPrompt, trackCount);
-    } else {
+    } 
+    // Manual Playlist Generation
+    else {
+      // Check for manually added tracks first
       const manualTracks = Array.from(document.getElementById('mood-playlist').children).map(item => ({
         uri: item.getAttribute('data-track-uri'),
         id: item.getAttribute('data-track-id'),
@@ -1146,24 +1160,38 @@ async function generateSpecialPlaylist() {
       if (manualTracks.length > 0) {
         tracksToAdd = manualTracks.slice(0, trackCount);
       } else {
+        // Generate based on selected genres
         const selectedGenres = getSelectedGenres();
-        if (selectedGenres.length === 0) {
+        if (!selectedGenres || selectedGenres.length === 0) {
           throw new Error('Please select at least one genre');
         }
 
+        // Get seed tracks and recommendations
         const seedTracks = await getSeedTracks();
         tracksToAdd = await getRecommendedTracks(seedTracks, selectedGenres, trackCount);
+
+        // If we didn't get enough tracks, fill with top tracks
+        if (tracksToAdd.length < trackCount) {
+          console.log(`Only got ${tracksToAdd.length} tracks. Adding ${trackCount - tracksToAdd.length} top tracks...`);
+          const topTracks = await fetchTopTracks(trackCount - tracksToAdd.length);
+          tracksToAdd = [...tracksToAdd, ...topTracks];
+        }
       }
     }
 
+    // Final validation
     if (tracksToAdd.length === 0) {
       throw new Error('Failed to find tracks for your playlist');
     }
 
+    // Ensure we don't exceed requested count
     tracksToAdd = tracksToAdd.slice(0, trackCount);
+    
+    // Show the generated playlist
     showGeneratedPlaylist(playlistName, tracksToAdd, isPublic);
     
   } catch (error) {
+    console.error('Playlist generation error:', error);
     showError(error.message);
   } finally {
     button.classList.remove('loading');
@@ -1614,6 +1642,10 @@ function openModal(content, modalType = '') {
   } else {
     modalContent.className = 'modal-content';
   }
+  const closeButtons = modalContent.querySelectorAll('.close-button');
+  closeButtons.forEach(button => {
+    button.addEventListener('click', closeModal);
+  });
   
   modal.setAttribute('aria-modal', 'true');
   modal.setAttribute('role', 'dialog');
